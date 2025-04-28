@@ -1,0 +1,12 @@
+diff --git a/components/sessions/content/content_serialized_navigation_builder.cc b/components/sessions/content/content_serialized_navigation_builder.cc
+index 5e01b736dc5ec182b23e43805112bd947f594c9d..30ba595a4130005742cba3b467fd5d8fefbbf8e8 100644
+--- a/components/sessions/content/content_serialized_navigation_builder.cc
++++ b/components/sessions/content/content_serialized_navigation_builder.cc
+@@ -180,6 +180,7 @@ ContentSerializedNavigationBuilder::ToNavigationEntry(
+   // This field should have the default value.
+   DCHECK_EQ(SerializedNavigationEntry::STATE_INVALID,
+             navigation->blocked_state_);
++  BRAVE_CONTENT_SERIALIZED_NAVIGATION_BUILDER_TO_NAVIGATION_ENTRY
+ 
+   return entry;
+ }
