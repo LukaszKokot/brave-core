@@ -34,6 +34,9 @@ const string kWaitToolName = "wait";
 const string kBraveNewsSearchToolName = "brave_news_search";
 const string kBraveWebSearchToolName = "brave_web_search";
 
+// Tool artifact types
+const string kLineChartArtifactType = "line_chart";
+
 // Maximum length for memory and customization records.
 const int32 kMaxMemoryRecordLength = 512;
 
