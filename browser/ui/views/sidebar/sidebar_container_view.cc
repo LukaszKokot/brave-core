@@ -831,18 +831,6 @@ void SidebarContainerView::OnTabWillBeRemoved(tabs::TabInterface* tab,
   }
 }
 
-void SidebarContainerView::UpdateActiveItemState() {
-  DVLOG(1) << "Update active item state";
-
-  auto* controller = browser_->GetFeatures().sidebar_controller();
-  std::optional<sidebar::SidebarItem::BuiltInItemType> current_type;
-  if (auto entry_id = side_panel_coordinator_->GetCurrentEntryId(
-          SidePanelEntry::PanelType::kContent)) {
-    current_type = sidebar::BuiltInItemTypeFromSidePanelId(*entry_id);
-  }
-  controller->UpdateActiveItemState(current_type);
-}
-
 void SidebarContainerView::OnTabStripModelChanged(
     TabStripModel* tab_strip_model,
     const TabStripModelChange& change,

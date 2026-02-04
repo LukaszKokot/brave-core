@@ -18,6 +18,7 @@
 #include "base/test/scoped_feature_list.h"
 #include "brave/app/brave_command_ids.h"
 #include "brave/browser/ui/browser_commands.h"
+#include "brave/browser/ui/sidebar/features.h"
 #include "brave/browser/ui/sidebar/sidebar_controller.h"
 #include "brave/browser/ui/sidebar/sidebar_model.h"
 #include "brave/browser/ui/sidebar/sidebar_service_factory.h"
@@ -31,6 +32,7 @@
 #include "brave/browser/ui/views/side_panel/side_panel.h"
 #include "brave/browser/ui/views/side_panel/side_panel_resize_widget.h"
 #include "brave/browser/ui/views/sidebar/sidebar_container_view.h"
+#include "brave/browser/ui/views/sidebar/sidebar_container_view_new.h"
 #include "brave/browser/ui/views/sidebar/sidebar_control_view.h"
 #include "brave/browser/ui/views/sidebar/sidebar_items_contents_view.h"
 #include "brave/browser/ui/views/sidebar/sidebar_items_scroll_view.h"
@@ -81,6 +83,7 @@
 #include "ui/events/event.h"
 #include "ui/gfx/animation/animation_test_api.h"
 #include "ui/gfx/geometry/point.h"
+#include "ui/views/view_utils.h"
 
 #if BUILDFLAG(ENABLE_AI_CHAT)
 #include "brave/components/ai_chat/core/common/features.h"
@@ -1775,6 +1778,25 @@ IN_PROC_BROWSER_TEST_F(SidebarBrowserTest,
 
   // Verify that SidebarContainerView is NOT observing the kToolbar entry.
   EXPECT_FALSE(toolbar_entry_ptr->IsBeingObservedBy(sidebar_container));
+}
+
+class SidebarV2BrowserTest : public SidebarBrowserTest {
+ public:
+  SidebarV2BrowserTest() {
+    scoped_features_.InitAndEnableFeature(sidebar::features::kSidebarV2);
+  }
+
+  BraveBrowserView* browser_view() {
+    return BraveBrowserView::From(
+        BrowserView::GetBrowserViewForBrowser(browser()));
+  }
+
+ private:
+  base::test::ScopedFeatureList scoped_features_;
+};
+
+IN_PROC_BROWSER_TEST_F(SidebarV2BrowserTest, BrowserStartsWithV2Enabled) {
+  ASSERT_TRUE(browser_view()->sidebar_container_view_new_);
 }
 
 }  // namespace sidebar

@@ -1,0 +1,32 @@
+# Copyright (c) 2026 The Brave Authors. All rights reserved.
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this file,
+# You can obtain one at https://mozilla.org/MPL/2.0/.
+
+source_set("sidebar") {
+  sources = [
+    "sidebar_container_view_new.cc",
+    "sidebar_container_view_new.h",
+  ]
+
+  deps = [
+    "//base",
+    "//brave/browser/ui/sidebar",
+    "//brave/components/constants",
+    "//brave/components/sidebar/browser",
+    "//chrome/browser/profiles",
+    "//chrome/browser/ui/browser_window",
+    "//chrome/browser/ui/color:color_headers",
+    "//chrome/browser/ui/color:mixers",
+    "//chrome/browser/ui/exclusive_access",
+    "//chrome/browser/ui/views",
+    "//chrome/browser/ui/views/side_panel",
+    "//chrome/browser/ui/views/toolbar",
+    "//components/prefs",
+    "//ui/base",
+    "//ui/compositor",
+    "//ui/events",
+    "//ui/gfx",
+    "//ui/views",
+  ]
+}

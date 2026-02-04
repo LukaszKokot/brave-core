@@ -131,8 +131,6 @@ class SidebarContainerView : public sidebar::Sidebar,
       const TabStripSelectionChange& selection) override;
   void OnTabWillBeRemoved(tabs::TabInterface* tab, int index) override;
 
-  void UpdateActiveItemState();
-
  private:
   friend class sidebar::SidebarBrowserTest;
 

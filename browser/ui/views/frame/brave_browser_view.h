@@ -48,6 +48,7 @@ enum class SpeedreaderBubbleLocation : int;
 namespace sidebar {
 FORWARD_DECLARE_TEST(SidebarBrowserWithSplitViewTest,
                      ShowSidebarOnMouseOverTest);
+FORWARD_DECLARE_TEST(SidebarV2BrowserTest, BrowserStartsWithV2Enabled);
 }  // namespace sidebar
 
 namespace content {
@@ -56,6 +57,7 @@ class WebContents;
 
 namespace sidebar {
 class SidebarBrowserTest;
+class SidebarV2BrowserTest;
 }  // namespace sidebar
 
 namespace views {
@@ -67,6 +69,7 @@ class BraveHelpBubbleHostView;
 class BraveMultiContentsView;
 class ContentsLayoutManager;
 class SidebarContainerView;
+class SidebarContainerViewNew;
 class SidePanelEntry;
 class VerticalTabStripWidgetDelegateView;
 class ViewShadow;
@@ -198,6 +201,8 @@ class BraveBrowserView : public BrowserView,
                            ContentsShadowTest);
   FRIEND_TEST_ALL_PREFIXES(sidebar::SidebarBrowserWithSplitViewTest,
                            ShowSidebarOnMouseOverTest);
+  FRIEND_TEST_ALL_PREFIXES(sidebar::SidebarV2BrowserTest,
+                           BrowserStartsWithV2Enabled);
 
   static void SetDownloadConfirmReturnForTesting(bool allow);
 
@@ -257,6 +262,7 @@ class BraveBrowserView : public BrowserView,
   bool closing_confirm_dialog_activated_ = false;
   raw_ptr<BraveHelpBubbleHostView> brave_help_bubble_host_view_ = nullptr;
   raw_ptr<SidebarContainerView> sidebar_container_view_ = nullptr;
+  raw_ptr<SidebarContainerViewNew> sidebar_container_view_new_ = nullptr;
   raw_ptr<views::View> sidebar_separator_view_ = nullptr;
   raw_ptr<views::View> contents_background_view_ = nullptr;
   raw_ptr<views::View> vertical_tab_strip_host_view_ = nullptr;

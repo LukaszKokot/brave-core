@@ -71,6 +71,7 @@ source_set("browser_tests") {
     "//brave/app:command_ids",
     "//brave/browser/ui/views/frame",
     "//brave/browser/ui/views/frame/split_view",
+    "//brave/browser/ui/views/sidebar",
     "//brave/components/ai_chat/core/common/buildflags",
     "//brave/components/brave_talk/buildflags",
     "//brave/components/brave_wallet/common/buildflags",

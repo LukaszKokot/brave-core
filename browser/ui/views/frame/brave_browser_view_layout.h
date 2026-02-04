@@ -11,6 +11,7 @@
 #include "chrome/browser/ui/views/frame/layout/browser_view_layout_impl_old.h"
 
 class SidebarContainerView;
+class SidebarContainerViewNew;
 
 class BraveBrowserViewLayout : public BrowserViewLayoutImplOld {
  public:
@@ -29,6 +30,10 @@ class BraveBrowserViewLayout : public BrowserViewLayoutImplOld {
 
   void set_sidebar_container(SidebarContainerView* sidebar_container) {
     sidebar_container_ = sidebar_container;
+  }
+
+  void set_sidebar_container_new(SidebarContainerViewNew* sidebar_container) {
+    sidebar_container_new_ = sidebar_container;
   }
 
   void set_sidebar_separator(views::View* sidebar_separator) {
@@ -57,6 +62,8 @@ class BraveBrowserViewLayout : public BrowserViewLayoutImplOld {
   bool ShouldPushBookmarkBarForVerticalTabs();
   gfx::Insets GetInsetsConsideringVerticalTabHost() const;
   void UpdateContentsContainerInsets(gfx::Rect& contents_container_bounds);
+  views::View* GetSidebarContainer() const;
+  bool GetSidebarOnLeft() const;
 
 #if BUILDFLAG(IS_MAC)
   gfx::Insets AddFrameBorderInsets(const gfx::Insets& insets) const;
@@ -65,6 +72,7 @@ class BraveBrowserViewLayout : public BrowserViewLayoutImplOld {
 
   raw_ptr<views::View, DanglingUntriaged> vertical_tab_strip_host_ = nullptr;
   raw_ptr<SidebarContainerView, DanglingUntriaged> sidebar_container_ = nullptr;
+  raw_ptr<SidebarContainerViewNew> sidebar_container_new_ = nullptr;
   raw_ptr<views::View> sidebar_separator_ = nullptr;
   raw_ptr<views::View> contents_background_ = nullptr;
 };
