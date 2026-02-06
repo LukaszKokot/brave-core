@@ -143,6 +143,8 @@ std::string_view CodeExecutionTool::Description() const {
   return "Execute JavaScript code and capture console output. "
          "Use only when the task requires code execution for providing an "
          "accurate answer. "
+         "The tool should only be used when the code performs "
+         "meaningful computation or data transformation. "
          "Do not use this if you are able to answer without executing code. "
          "Do not use this for content generation. "
          "Do not use this for fetching information from the internet. "
@@ -155,10 +157,12 @@ std::string_view CodeExecutionTool::Description() const {
          "Example tasks that require code execution:\n"
          " - Financial calculations (e.g. compound interest)\n"
          " - Analyzing data or web content\n"
-         "Example tasks that do not require code execution:\n"
-         " - Very simple calculations (e.g. 2 + 2)\n"
+         "Example tasks that do NOT require code execution:\n"
+         " - Simple arithmetic (e.g. console.log(2 + 2))\n"
+         " - Printing static text (e.g. console.log(\"Hello World\"))\n"
          " - Finding the 4th prime number\n"
-         " - Retrieving weather information for a location";
+         " - Retrieving weather information for a location\n"
+         " - Any script where the only logic is a console.log() call";
 }
 
 std::optional<base::Value::Dict> CodeExecutionTool::InputProperties() const {
