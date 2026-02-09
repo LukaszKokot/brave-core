@@ -20,8 +20,11 @@ static_library("core") {
   assert_no_deps = [ "//content/public/*" ]
 
   sources = [
+    "background_web_ui.h",
     "features.cc",
     "features.h",
+    "local_ai_service.cc",
+    "local_ai_service.h",
     "local_models_updater.cc",
     "local_models_updater.h",
   ]
@@ -29,12 +32,15 @@ static_library("core") {
   public_deps = [ "//base" ]
 
   deps = [
+    ":mojom",
     "//brave/components/brave_component_updater/browser:public",
     "//brave/components/resources:strings_grit",
     "//components/component_updater",
     "//components/component_updater:component_updater_paths",
+    "//components/keyed_service/core",
     "//components/update_client",
     "//crypto",
+    "//mojo/public/cpp/bindings",
   ]
 }
 
