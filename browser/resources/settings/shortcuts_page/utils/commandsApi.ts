@@ -8,6 +8,7 @@ import {
   eventsFor,
   endpointsFor,
   state,
+  actionsFor,
 } from '$web-common/api'
 
 import * as Mojom from 'gen/brave/components/commands/common/commands.mojom.m'
@@ -16,10 +17,10 @@ export function createCommandsApi(
   controller: Mojom.CommandsServiceInterface,
 ) {
   const api = createInterfaceApi({
-    actions: {
-      resetAccelerators: () => controller.resetAccelerators(),
-      resetAcceleratorsForCommand: (commandId: number) => controller.resetAcceleratorsForCommand(commandId),
-    },
+    actions: actionsFor(controller, [
+      'resetAccelerators',
+      'resetAcceleratorsForCommand',
+    ]),
     endpoints: {
       ...endpointsFor(controller,
         {
