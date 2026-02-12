@@ -5,7 +5,10 @@
 
 #include "chrome/browser/profiles/profile_attributes_entry.h"
 
+#include <utility>
+
 #include "base/check.h"
+#include "base/values.h"
 #include "chrome/browser/profiles/profile_avatar_icon_util.h"
 
 void ProfileAttributesEntry::BraveMigrateObsoleteProfileAttributes() {
@@ -34,6 +37,15 @@ void ProfileAttributesEntry::BraveMigrateObsoleteProfileAttributes() {
     SetAvatarIconIndex(kPlaceholderAvatarIndex);
   }
 #endif
+}
+
+const base::DictValue* ProfileAttributesEntry::GetSerpMetrics() const {
+  const base::Value* value = GetValue(kSerpMetricsKey);
+  return value ? value->GetIfDict() : nullptr;
+}
+
+void ProfileAttributesEntry::SetSerpMetrics(base::DictValue serp_metrics) {
+  SetValue(kSerpMetricsKey, base::Value(std::move(serp_metrics)));
 }
 
 #define BRAVE_PROFILE_ATTRIBUTES_ENTRY_MIGRATE_OBSOLETE_PROFILE_ATTRIBUTES \

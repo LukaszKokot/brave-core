@@ -17,19 +17,26 @@ class Clock;
 }
 
 class PrefService;
+class TimePeriodStore;
 
 // Mostly used by various P3A recorders - allows to track a sum of some
 // values added from time to time via |AddDelta| over the last predefined time
 // period. Requires |pref_name| to be already registered.
 class TimePeriodStorage {
  public:
-  // Will use a list pref for storage.
+  // Will use a TimePeriodStore for storage.
+  TimePeriodStorage(std::unique_ptr<TimePeriodStore> store,
+                    size_t period_days,
+                    bool should_offset_dst = true);
+
+  // Will use a list pref for storage. Legacy constructor for backward
+  // compatibility.
   TimePeriodStorage(PrefService* prefs,
                     const char* pref_name,
                     size_t period_days,
                     bool should_offset_dst = true);
-  // Will use a list within a dictionary pref
-  // for storage.
+  // Will use a list within a dictionary pref for storage. Legacy constructor
+  // for backward compatibility.
   TimePeriodStorage(PrefService* prefs,
                     const char* pref_name,
                     const char* dict_key,
@@ -72,9 +79,7 @@ class TimePeriodStorage {
   void Load();
   void Save();
 
-  const raw_ptr<PrefService> prefs_;
-  const char* pref_name_ = nullptr;
-  const char* dict_key_ = nullptr;
+  std::unique_ptr<TimePeriodStore> store_;
   size_t period_days_;
   const bool should_offset_dst_;
 

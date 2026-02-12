@@ -12,17 +12,13 @@
 #include "base/feature_list.h"
 #include "base/time/time.h"
 #include "brave/components/constants/pref_names.h"
-#include "brave/components/serp_metrics/pref_names.h"
 #include "brave/components/serp_metrics/serp_metrics_feature.h"
+#include "brave/components/time_period_storage/time_period_storage.h"
 #include "components/prefs/pref_service.h"
 
 namespace serp_metrics {
 
 namespace {
-
-constexpr char kBraveSearchEngineDictKey[] = "brave_search_engine";
-constexpr char kGoogleSearchEngineDictKey[] = "google_search_engine";
-constexpr char kOtherSearchEngineDictKey[] = "other_search_engine";
 
 // Returns the start of yesterday in local time (midnight at the beginning of
 // the previous calendar day). Subtracting 12 hours ensures we cross into the
@@ -71,61 +67,54 @@ size_t GetYesterdaySumAfterLastCheckedCutoff(
 
 }  // namespace
 
-SerpMetrics::SerpMetrics(PrefService* local_state, PrefService* prefs)
+SerpMetrics::SerpMetrics(
+    PrefService* local_state,
+    std::unique_ptr<TimePeriodStorage> brave_search_engine_time_period_storage,
+    std::unique_ptr<TimePeriodStorage> google_search_engine_time_period_storage,
+    std::unique_ptr<TimePeriodStorage> other_search_engine_time_period_storage)
     : local_state_(local_state),
-      prefs_(prefs),
       brave_search_engine_time_period_storage_(
-          prefs,
-          prefs::kSerpMetricsTimePeriodStorage,
-          kBraveSearchEngineDictKey,
-          kSerpMetricsTimePeriodInDays.Get(),
-          /*should_offset_dst=*/false),
+          std::move(brave_search_engine_time_period_storage)),
       google_search_engine_time_period_storage_(
-          prefs,
-          prefs::kSerpMetricsTimePeriodStorage,
-          kGoogleSearchEngineDictKey,
-          kSerpMetricsTimePeriodInDays.Get(),
-          /*should_offset_dst=*/false),
+          std::move(google_search_engine_time_period_storage)),
       other_search_engine_time_period_storage_(
-          prefs,
-          prefs::kSerpMetricsTimePeriodStorage,
-          kOtherSearchEngineDictKey,
-          kSerpMetricsTimePeriodInDays.Get(),
-          /*should_offset_dst=*/false) {
+          std::move(other_search_engine_time_period_storage)) {
   CHECK(local_state_);
-  CHECK(prefs_);
+  CHECK(brave_search_engine_time_period_storage_);
+  CHECK(google_search_engine_time_period_storage_);
+  CHECK(other_search_engine_time_period_storage_);
   CHECK(base::FeatureList::IsEnabled(serp_metrics::kSerpMetricsFeature));
 }
 
 SerpMetrics::~SerpMetrics() = default;
 
 void SerpMetrics::RecordBraveSearch() {
-  brave_search_engine_time_period_storage_.AddDelta(1);
+  brave_search_engine_time_period_storage_->AddDelta(1);
 }
 
 size_t SerpMetrics::GetBraveSearchCountForYesterday() const {
   return GetYesterdaySumAfterLastCheckedCutoff(
-      brave_search_engine_time_period_storage_, GetStartOfYesterday(),
+      *brave_search_engine_time_period_storage_, GetStartOfYesterday(),
       GetEndOfYesterday(), GetStartOfStalePeriod());
 }
 
 void SerpMetrics::RecordGoogleSearch() {
-  google_search_engine_time_period_storage_.AddDelta(1);
+  google_search_engine_time_period_storage_->AddDelta(1);
 }
 
 size_t SerpMetrics::GetGoogleSearchCountForYesterday() const {
   return GetYesterdaySumAfterLastCheckedCutoff(
-      google_search_engine_time_period_storage_, GetStartOfYesterday(),
+      *google_search_engine_time_period_storage_, GetStartOfYesterday(),
       GetEndOfYesterday(), GetStartOfStalePeriod());
 }
 
 void SerpMetrics::RecordOtherSearch() {
-  other_search_engine_time_period_storage_.AddDelta(1);
+  other_search_engine_time_period_storage_->AddDelta(1);
 }
 
 size_t SerpMetrics::GetOtherSearchCountForYesterday() const {
   return GetYesterdaySumAfterLastCheckedCutoff(
-      other_search_engine_time_period_storage_, GetStartOfYesterday(),
+      *other_search_engine_time_period_storage_, GetStartOfYesterday(),
       GetEndOfYesterday(), GetStartOfStalePeriod());
 }
 
@@ -136,21 +125,21 @@ size_t SerpMetrics::GetSearchCountForStalePeriod() const {
 }
 
 void SerpMetrics::ClearHistory() {
-  brave_search_engine_time_period_storage_.Clear();
-  google_search_engine_time_period_storage_.Clear();
-  other_search_engine_time_period_storage_.Clear();
+  brave_search_engine_time_period_storage_->Clear();
+  google_search_engine_time_period_storage_->Clear();
+  other_search_engine_time_period_storage_->Clear();
 }
 
 size_t SerpMetrics::GetBraveSearchCountForTesting() const {
-  return brave_search_engine_time_period_storage_.GetPeriodSum();
+  return brave_search_engine_time_period_storage_->GetPeriodSum();
 }
 
 size_t SerpMetrics::GetGoogleSearchCountForTesting() const {
-  return google_search_engine_time_period_storage_.GetPeriodSum();
+  return google_search_engine_time_period_storage_->GetPeriodSum();
 }
 
 size_t SerpMetrics::GetOtherSearchCountForTesting() const {
-  return other_search_engine_time_period_storage_.GetPeriodSum();
+  return other_search_engine_time_period_storage_->GetPeriodSum();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -179,17 +168,17 @@ base::Time SerpMetrics::GetStartOfStalePeriod() const {
 }
 
 size_t SerpMetrics::GetBraveSearchCountForStalePeriod() const {
-  return brave_search_engine_time_period_storage_.GetPeriodSumInTimeRange(
+  return brave_search_engine_time_period_storage_->GetPeriodSumInTimeRange(
       GetStartOfStalePeriod(), GetEndOfStalePeriod());
 }
 
 size_t SerpMetrics::GetGoogleSearchCountForStalePeriod() const {
-  return google_search_engine_time_period_storage_.GetPeriodSumInTimeRange(
+  return google_search_engine_time_period_storage_->GetPeriodSumInTimeRange(
       GetStartOfStalePeriod(), GetEndOfStalePeriod());
 }
 
 size_t SerpMetrics::GetOtherSearchCountForStalePeriod() const {
-  return other_search_engine_time_period_storage_.GetPeriodSumInTimeRange(
+  return other_search_engine_time_period_storage_->GetPeriodSumInTimeRange(
       GetStartOfStalePeriod(), GetEndOfStalePeriod());
 }
 

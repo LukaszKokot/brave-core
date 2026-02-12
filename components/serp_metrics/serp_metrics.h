@@ -7,11 +7,12 @@
 #define BRAVE_COMPONENTS_SERP_METRICS_SERP_METRICS_H_
 
 #include <cstddef>
+#include <memory>
 
 #include "base/memory/raw_ptr.h"
-#include "brave/components/time_period_storage/time_period_storage.h"
 
 class PrefService;
+class TimePeriodStorage;
 
 namespace base {
 class Time;
@@ -27,10 +28,15 @@ namespace serp_metrics {
 //    (00:00:00 to 23:59:59 in the reporting timezone).
 //  - Stale period: searches older than yesterday (but still within the
 //    `TimePeriodStorage` retention window).
-
 class SerpMetrics {
  public:
-  SerpMetrics(PrefService* local_state, PrefService* prefs);
+  SerpMetrics(PrefService* local_state,
+              std::unique_ptr<TimePeriodStorage>
+                  brave_search_engine_time_period_storage,
+              std::unique_ptr<TimePeriodStorage>
+                  google_search_engine_time_period_storage,
+              std::unique_ptr<TimePeriodStorage>
+                  other_search_engine_time_period_storage);
 
   SerpMetrics(const SerpMetrics&) = delete;
   SerpMetrics& operator=(const SerpMetrics&) = delete;
@@ -70,11 +76,10 @@ class SerpMetrics {
   size_t GetOtherSearchCountForStalePeriod() const;
 
   const raw_ptr<PrefService> local_state_;  // Not owned.
-  const raw_ptr<PrefService> prefs_;        // Not owned.
 
-  TimePeriodStorage brave_search_engine_time_period_storage_;
-  TimePeriodStorage google_search_engine_time_period_storage_;
-  TimePeriodStorage other_search_engine_time_period_storage_;
+  std::unique_ptr<TimePeriodStorage> brave_search_engine_time_period_storage_;
+  std::unique_ptr<TimePeriodStorage> google_search_engine_time_period_storage_;
+  std::unique_ptr<TimePeriodStorage> other_search_engine_time_period_storage_;
 };
 
 }  // namespace serp_metrics
