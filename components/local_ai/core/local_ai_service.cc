@@ -11,15 +11,15 @@
 
 namespace local_ai {
 
-LocalAIService::PendingEmbedRequest::PendingEmbedRequest() = default;
-LocalAIService::PendingEmbedRequest::PendingEmbedRequest(std::string text,
-                                                         EmbedCallback callback)
+LocalAIService::PendingRequest::PendingRequest() = default;
+LocalAIService::PendingRequest::PendingRequest(
+    std::string text,
+    GenerateEmbeddingsCallback callback)
     : text(std::move(text)), callback(std::move(callback)) {}
-LocalAIService::PendingEmbedRequest::~PendingEmbedRequest() = default;
-LocalAIService::PendingEmbedRequest::PendingEmbedRequest(
-    PendingEmbedRequest&&) = default;
-LocalAIService::PendingEmbedRequest&
-LocalAIService::PendingEmbedRequest::operator=(PendingEmbedRequest&&) = default;
+LocalAIService::PendingRequest::~PendingRequest() = default;
+LocalAIService::PendingRequest::PendingRequest(PendingRequest&&) = default;
+LocalAIService::PendingRequest& LocalAIService::PendingRequest::operator=(
+    PendingRequest&&) = default;
 
 LocalAIService::LocalAIService(BackgroundWebUIFactory factory)
     : background_web_ui_factory_(std::move(factory)) {
@@ -41,19 +41,19 @@ void LocalAIService::Bind(
   receivers_.Add(this, std::move(receiver));
 }
 
-void LocalAIService::BindEmbeddingGemma(
-    mojo::PendingRemote<mojom::EmbeddingGemmaInterface> pending_remote) {
-  if (embedding_gemma_remote_.is_bound()) {
-    DVLOG(1) << "EmbeddingGemma already bound, resetting";
-    embedding_gemma_remote_.reset();
+void LocalAIService::RegisterOnDeviceModelWorker(
+    mojo::PendingRemote<mojom::OnDeviceModelWorker> worker) {
+  if (model_worker_remote_.is_bound()) {
+    DVLOG(1) << "Model worker already bound, resetting";
+    model_worker_remote_.reset();
   }
-  embedding_gemma_remote_.Bind(std::move(pending_remote));
+  model_worker_remote_.Bind(std::move(worker));
 
-  embedding_gemma_remote_.set_disconnect_handler(base::BindOnce(
+  model_worker_remote_.set_disconnect_handler(base::BindOnce(
       [](LocalAIService* service) {
-        DVLOG(1) << "EmbeddingGemma remote disconnected";
-        std::vector<PendingEmbedRequest> requests;
-        requests.swap(service->pending_embed_requests_);
+        DVLOG(1) << "Model worker remote disconnected";
+        std::vector<PendingRequest> requests;
+        requests.swap(service->pending_requests_);
         for (auto& request : requests) {
           std::move(request.callback).Run({});
         }
@@ -61,21 +61,22 @@ void LocalAIService::BindEmbeddingGemma(
       },
       base::Unretained(this)));
 
-  DVLOG(3) << "BindEmbeddingGemma: Bound embedder remote";
+  DVLOG(3) << "RegisterOnDeviceModelWorker: Bound model worker";
 
-  ProcessPendingEmbedRequests();
+  ProcessPendingRequests();
 }
 
-void LocalAIService::Embed(const std::string& text, EmbedCallback callback) {
+void LocalAIService::GenerateEmbeddings(const std::string& text,
+                                        GenerateEmbeddingsCallback callback) {
   EnsureBackgroundContents();
 
-  if (!embedding_gemma_remote_.is_bound()) {
-    DVLOG(3) << "Embedding not ready yet, queuing embed request";
-    pending_embed_requests_.emplace_back(text, std::move(callback));
+  if (!model_worker_remote_.is_bound()) {
+    DVLOG(3) << "Model worker not ready yet, queuing request";
+    pending_requests_.emplace_back(text, std::move(callback));
     return;
   }
 
-  embedding_gemma_remote_->Embed(text, std::move(callback));
+  model_worker_remote_->GenerateEmbeddings(text, std::move(callback));
 }
 
 void LocalAIService::OnBackgroundContentsReady() {
@@ -84,13 +85,13 @@ void LocalAIService::OnBackgroundContentsReady() {
 
 void LocalAIService::OnBackgroundContentsDestroyed() {
   DVLOG(1) << "LocalAIService: Background contents destroyed";
-  std::vector<PendingEmbedRequest> requests;
-  requests.swap(pending_embed_requests_);
+  std::vector<PendingRequest> requests;
+  requests.swap(pending_requests_);
   for (auto& request : requests) {
     std::move(request.callback).Run({});
   }
   background_web_ui_.reset();
-  embedding_gemma_remote_.reset();
+  model_worker_remote_.reset();
 }
 
 void LocalAIService::Shutdown() {
@@ -98,18 +99,18 @@ void LocalAIService::Shutdown() {
   CloseBackgroundContents();
 }
 
-void LocalAIService::ProcessPendingEmbedRequests() {
-  if (!embedding_gemma_remote_.is_bound()) {
+void LocalAIService::ProcessPendingRequests() {
+  if (!model_worker_remote_.is_bound()) {
     return;
   }
 
-  DVLOG(3) << "Processing " << pending_embed_requests_.size()
-           << " pending embed requests";
+  DVLOG(3) << "Processing " << pending_requests_.size() << " pending requests";
 
-  std::vector<PendingEmbedRequest> requests;
-  requests.swap(pending_embed_requests_);
+  std::vector<PendingRequest> requests;
+  requests.swap(pending_requests_);
   for (auto& request : requests) {
-    embedding_gemma_remote_->Embed(request.text, std::move(request.callback));
+    model_worker_remote_->GenerateEmbeddings(request.text,
+                                             std::move(request.callback));
   }
 }
 
@@ -118,16 +119,18 @@ void LocalAIService::EnsureBackgroundContents() {
     return;
   }
 
-  DVLOG(3) << "LocalAIService: Creating BackgroundWebUI";
+  DVLOG(3) << "LocalAIService: Creating background contents";
+
   background_web_ui_ = background_web_ui_factory_.Run(this);
 }
 
 void LocalAIService::CloseBackgroundContents() {
-  DVLOG(3) << "LocalAIService: Closing BackgroundWebUI to free memory";
+  DVLOG(3) << "LocalAIService: Closing background contents "
+              "to free memory";
 
-  embedding_gemma_remote_.reset();
-  std::vector<PendingEmbedRequest> requests;
-  requests.swap(pending_embed_requests_);
+  model_worker_remote_.reset();
+  std::vector<PendingRequest> requests;
+  requests.swap(pending_requests_);
   for (auto& request : requests) {
     std::move(request.callback).Run({});
   }
