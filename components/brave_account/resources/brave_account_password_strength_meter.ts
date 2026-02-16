@@ -17,7 +17,7 @@ import { getHtml } from './brave_account_password_strength_meter.html.js'
 
 export type PasswordStrengthChangedEventDetail = { isStrongEnough: boolean }
 
-export class BraveAccountPasswordStrengthMeter extends CrLitElement {
+export class BraveAccountPasswordStrengthMeterElement extends CrLitElement {
   static get is() {
     return 'brave-account-password-strength-meter'
   }
@@ -79,11 +79,11 @@ export class BraveAccountPasswordStrengthMeter extends CrLitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'brave-account-password-strength-meter': BraveAccountPasswordStrengthMeter
+    'brave-account-password-strength-meter': BraveAccountPasswordStrengthMeterElement
   }
 }
 
 customElements.define(
-  BraveAccountPasswordStrengthMeter.is,
-  BraveAccountPasswordStrengthMeter,
+  BraveAccountPasswordStrengthMeterElement.is,
+  BraveAccountPasswordStrengthMeterElement,
 )
