@@ -30,7 +30,7 @@ class TabManagementTool;
 // that the tools for a conversation perform actions on.
 class BrowserToolProvider : public ToolProvider {
  public:
-  explicit BrowserToolProvider(content::BrowserContext* browser_context);
+  explicit BrowserToolProvider(Profile* profile);
 
   ~BrowserToolProvider() override;
 
@@ -48,6 +48,7 @@ class BrowserToolProvider : public ToolProvider {
 #if BUILDFLAG(ENABLE_TAB_MANAGEMENT_TOOL)
   std::unique_ptr<TabManagementTool> tab_management_tool_;
 #endif
+  raw_ptr<Profile> profile_ = nullptr;
 };
 
 }  // namespace ai_chat
