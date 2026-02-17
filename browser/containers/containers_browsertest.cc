@@ -851,4 +851,47 @@ IN_PROC_BROWSER_TEST_F(ContainersBrowserTest,
   // container
 }
 
+IN_PROC_BROWSER_TEST_F(ContainersBrowserTest, ShouldShowTabAccent) {
+  auto* tab_strip_model = browser()->tab_strip_model();
+  auto* tab_strip =
+      browser()->GetBrowserView().horizontal_tab_strip_for_testing();
+  ASSERT_FALSE(tab_strip->ShouldPaintTabAccent(tab_strip->tab_at(0)));
+
+  const GURL url("https://a.test/simple.html");
+
+  // Create a container
+  auto container = containers::mojom::Container::New();
+  container->id = "shared-container";
+  container->name = "Shared Container";
+  container->icon = containers::mojom::Icon::kSocial;
+  container->background_color = SK_ColorYELLOW;
+
+  brave::OpenUrlInContainer(browser(), url, container);
+  EXPECT_EQ(2, tab_strip_model->count());
+
+  content::WebContents* contents_in_container =
+      tab_strip_model->GetActiveWebContents();
+  ASSERT_TRUE(contents_in_container);
+  EXPECT_TRUE(content::WaitForLoadStop(contents_in_container));
+
+  // The tab should show accent background
+  auto* tab_in_container = static_cast<BraveTab*>(
+      tab_strip->tab_at(tab_strip_model->active_index()));
+  EXPECT_TRUE(tab_strip->ShouldPaintTabAccent(tab_in_container));
+
+  // The standard tab should show large accent icon
+  RunScheduledLayouts();
+  EXPECT_TRUE(tab_in_container->ShouldShowLargeAccentIcon());
+
+  // A pinned tab should not show large accent icon
+  tab_strip_model->SetTabPinned(tab_strip_model->active_index(), true);
+  EXPECT_FALSE(tab_in_container->ShouldShowLargeAccentIcon());
+
+  // A small unpinned tab should not show large accent icon
+  tab_strip_model->SetTabPinned(tab_strip_model->active_index(), false);
+  RunScheduledLayouts();
+
+  tab_in_container->SetBounds(0, 0, 30, 30);
+  EXPECT_FALSE(tab_in_container->ShouldShowLargeAccentIcon());
+}
 }  // namespace containers
