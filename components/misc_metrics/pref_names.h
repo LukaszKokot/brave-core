@@ -79,6 +79,11 @@ inline constexpr char kMiscMetricsNTPWidgetUsageStorage[] =
 inline constexpr char kMiscMetricsSplitViewUsageStorage[] =
     "brave.misc_metrics.split_view_usage";
 
+inline constexpr char kMiscMetricsNavSourceReportFrameStartTime[] =
+    "brave.misc_metrics.nav_source_report_frame_start_time";
+inline constexpr char kMiscMetricsNavSourceCounts[] =
+    "brave.misc_metrics.nav_source_counts";
+
 }  // namespace misc_metrics
 
 #endif  // BRAVE_COMPONENTS_MISC_METRICS_PREF_NAMES_H_

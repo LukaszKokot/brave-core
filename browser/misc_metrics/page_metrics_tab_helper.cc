@@ -9,12 +9,14 @@
 #include "base/metrics/histogram_macros.h"
 #include "brave/browser/misc_metrics/profile_misc_metrics_service.h"
 #include "brave/browser/misc_metrics/profile_misc_metrics_service_factory.h"
+#include "brave/components/misc_metrics/navigation_source_metrics.h"
 #include "brave/components/misc_metrics/page_metrics.h"
 #include "chrome/browser/profiles/profile.h"
 #include "content/public/browser/browser_context.h"
 #include "content/public/browser/navigation_handle.h"
 #include "content/public/browser/reload_type.h"
 #include "content/public/browser/restore_type.h"
+#include "ui/base/page_transition_types.h"
 
 namespace misc_metrics {
 
@@ -46,10 +48,11 @@ void PageMetricsTabHelper::DidFinishNavigation(
       navigation_handle->GetPreviousPrimaryMainFrameURL();
   page_metrics_->brave_search_metrics()->MaybeRecordBraveQuery(previous_url,
                                                                current_url);
-  if (IsPrivateWindowEvent()) {
+  bool is_otr = IsPrivateWindowEvent();
+  if (is_otr) {
     UMA_HISTOGRAM_BOOLEAN("Brave.Core.PrivateWindowUsed", true);
-    return;
   }
+
   bool is_reload = false;
   auto reload_type = navigation_handle->GetReloadType();
   if (reload_type == content::ReloadType::NORMAL ||
@@ -60,7 +63,14 @@ void PageMetricsTabHelper::DidFinishNavigation(
     }
     is_reload = true;
   }
-  page_metrics_->IncrementPagesLoadedCount(is_reload);
+
+  ui::PageTransition transition = navigation_handle->GetPageTransition();
+  if (!is_reload && ui::PageTransitionCoreTypeIs(
+                        transition, ui::PAGE_TRANSITION_AUTO_BOOKMARK)) {
+    page_metrics_->navigation_source_metrics()->RecordBookmarkNavigation();
+  }
+
+  page_metrics_->IncrementPagesLoadedCount(is_reload, is_otr);
 }
 
 bool PageMetricsTabHelper::IsRelevantNavigationEvent(
