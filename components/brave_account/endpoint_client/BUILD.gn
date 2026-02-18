@@ -31,6 +31,19 @@ source_set("endpoint_client") {
   ]
 }
 
+source_set("test_support") {
+  testonly = true
+
+  sources = [ "mock_endpoint.h" ]
+
+  deps = [
+    ":endpoint_client",
+    "//base",
+    "//base/test:test_support",
+    "//net:test_support",
+  ]
+}
+
 source_set("unit_tests") {
   testonly = true
 

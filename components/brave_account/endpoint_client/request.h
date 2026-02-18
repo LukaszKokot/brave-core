@@ -34,6 +34,9 @@ enum class Method {
 // adds a static Method() accessor returning the canonical HTTP method string.
 template <IsRequestBody T, Method M>
 struct Request : T {
+  using DataType = T;
+  static constexpr Method kMethod = M;
+
   static constexpr std::string_view Method() {
     if constexpr (M == Method::kConnect) {
       return net::HttpRequestHeaders::kConnectMethod;

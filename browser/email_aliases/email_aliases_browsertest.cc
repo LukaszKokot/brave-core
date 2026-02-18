@@ -15,6 +15,7 @@
 #include "brave/browser/email_aliases/email_aliases_service_factory.h"
 #include "brave/browser/ui/email_aliases/email_aliases_controller.h"
 #include "brave/browser/ui/webui/brave_settings_ui.h"
+#include "brave/components/brave_account/endpoint_client/mock_endpoint.h"
 #include "brave/components/brave_account/features.h"
 #include "brave/components/brave_account/mock_brave_account_authentication.h"
 #include "brave/components/constants/brave_paths.h"
@@ -48,50 +49,8 @@
 namespace email_aliases {
 
 namespace {
+
 constexpr char kSuccessEmail[] = "success@domain.com";
-
-std::unique_ptr<net::test_server::HttpResponse> ManageHandler(
-    const net::test_server::HttpRequest& request) {
-  if (!request.GetURL().has_path() ||
-      !request.GetURL().path().starts_with("/manage")) {
-    return nullptr;
-  }
-
-  auto response = std::make_unique<net::test_server::BasicHttpResponse>();
-
-  if (request.method == net::test_server::HttpMethod::METHOD_GET) {
-    auto make_entry = [](const std::string& alias) {
-      email_aliases::AliasListEntry le;
-      le.alias = alias;
-      le.email = kSuccessEmail;
-      le.status = "active";
-      return le;
-    };
-    email_aliases::AliasListResponse list;
-    list.result.push_back(make_entry("first@alias.com"));
-    list.result.push_back(make_entry("second@alias.com"));
-    list.result.push_back(make_entry("third@alias.com"));
-
-    response->set_code(net::HTTP_OK);
-    response->set_content_type("application/json");
-    response->set_content(*base::WriteJson(list.ToValue()));
-  } else if (request.method == net::test_server::HttpMethod::METHOD_POST) {
-    response->set_code(net::HTTP_OK);
-    response->set_content_type("application/json");
-    email_aliases::GenerateAliasResponse generate;
-    generate.alias = "new@alias.com";
-    generate.message = "created";
-    response->set_content(*base::WriteJson(generate.ToValue()));
-  } else if (request.method == net::test_server::HttpMethod::METHOD_PUT) {
-    response->set_code(net::HTTP_OK);
-    response->set_content_type("application/json");
-    email_aliases::AliasEditedResponse save;
-    save.message = "updated";
-    response->set_content(*base::WriteJson(save.ToValue()));
-  }
-
-  return response;
-}
 
 }  // namespace
 
@@ -122,7 +81,33 @@ class EmailAliasesBrowserTestBase : public InProcessBrowserTest {
   }
 
   void SetUpOnMainThread() override {
-    https_server_.RegisterRequestHandler(base::BindRepeating(&ManageHandler));
+    alias_list_.WillSuccess([](email_aliases::AliasListRequest request) {
+      auto make_entry = [](const std::string& alias) {
+        email_aliases::AliasListEntry le;
+        le.alias = alias;
+        le.email = kSuccessEmail;
+        le.status = "active";
+        return le;
+      };
+      email_aliases::AliasListResponse list;
+      list.result.push_back(make_entry("first@alias.com"));
+      list.result.push_back(make_entry("second@alias.com"));
+      list.result.push_back(make_entry("third@alias.com"));
+      return list;
+    });
+    generate_alias_.WillSuccess(
+        [](email_aliases::GenerateAliasRequest request) {
+          email_aliases::GenerateAliasResponse create;
+          create.alias = "new@alias.com";
+          create.message = "created";
+          return create;
+        });
+    update_alias_.WillSuccess([](email_aliases::UpdateAliasRequest request) {
+      email_aliases::AliasEditedResponse udpate;
+      udpate.message = "updated";
+      return udpate;
+    });
+
     https_server_.ServeFilesFromDirectory(
         base::PathService::CheckedGet(brave::DIR_TEST_DATA));
 
@@ -310,6 +295,14 @@ class EmailAliasesBrowserTestBase : public InProcessBrowserTest {
  private:
   content::ContentMockCertVerifier mock_cert_verifier_;
   net::EmbeddedTestServer https_server_{net::EmbeddedTestServer::TYPE_HTTPS};
+
+  brave_account::endpoint_client::test::MockEndpoint<endpoints::GenerateAlias>
+      generate_alias_{https_server_};
+  brave_account::endpoint_client::test::MockEndpoint<endpoints::AliasList>
+      alias_list_{https_server_};
+  brave_account::endpoint_client::test::MockEndpoint<endpoints::UpdateAlias>
+      update_alias_{https_server_};
+
   testing::NiceMock<brave_account::MockBraveAccountAuthentication>
       brave_account_auth_;
 };
