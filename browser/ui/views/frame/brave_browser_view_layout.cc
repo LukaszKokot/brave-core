@@ -14,7 +14,6 @@
 #include "brave/browser/ui/views/frame/brave_browser_view.h"
 #include "brave/browser/ui/views/frame/brave_contents_view_util.h"
 #include "brave/browser/ui/views/sidebar/sidebar_container_view.h"
-#include "brave/browser/ui/views/sidebar/sidebar_container_view_new.h"
 #include "brave/browser/ui/views/tabs/vertical_tab_utils.h"
 #include "chrome/browser/profiles/profile.h"
 #include "chrome/browser/ui/browser.h"
@@ -54,23 +53,21 @@ BraveBrowserViewLayout::BraveBrowserViewLayout(
 BraveBrowserViewLayout::~BraveBrowserViewLayout() = default;
 
 int BraveBrowserViewLayout::GetIdealSideBarWidth() const {
-  views::View* sidebar_container = GetSidebarContainer();
-  if (!sidebar_container) {
+  if (!sidebar_container_) {
     return 0;
   }
 
   return GetIdealSideBarWidth(views().contents_container->width() +
                               GetContentsMargins().width() +
-                              sidebar_container->width());
+                              sidebar_container_->width());
 }
 
 int BraveBrowserViewLayout::GetIdealSideBarWidth(int available_width) const {
-  views::View* sidebar_container = GetSidebarContainer();
-  if (!sidebar_container) {
+  if (!sidebar_container_) {
     return 0;
   }
 
-  int sidebar_width = sidebar_container->GetPreferredSize().width();
+  int sidebar_width = sidebar_container_->GetPreferredSize().width();
 
   // The sidebar can take up the entire space for fullscreen.
   if (sidebar_width == std::numeric_limits<int>::max()) {
@@ -231,8 +228,7 @@ bool BraveBrowserViewLayout::IsImmersiveModeEnabledWithoutToolbar() const {
 }
 
 void BraveBrowserViewLayout::LayoutSideBar(gfx::Rect& contents_bounds) {
-  views::View* sidebar_container = GetSidebarContainer();
-  if (!sidebar_container) {
+  if (!sidebar_container_) {
     return;
   }
 
@@ -252,7 +248,7 @@ void BraveBrowserViewLayout::LayoutSideBar(gfx::Rect& contents_bounds) {
 #endif
 
   gfx::Rect separator_bounds;
-  bool on_left = GetSidebarOnLeft();
+  const bool on_left = sidebar_container_->sidebar_on_left();
   if (on_left) {
     contents_bounds.set_x(contents_bounds.x() + sidebar_bounds.width());
 
@@ -287,12 +283,12 @@ void BraveBrowserViewLayout::LayoutSideBar(gfx::Rect& contents_bounds) {
     // will have margins if needed.
     panel_margins.set_left_right(0, 0);
   }
-  if (sidebar_container_) {
-    sidebar_container_->side_panel()->SetProperty(views::kMarginsKey,
-                                                  panel_margins);
+  // V1 wraps the side panel; set margins on it. V2 has no owned panel.
+  if (auto* panel = sidebar_container_->side_panel()) {
+    panel->SetProperty(views::kMarginsKey, panel_margins);
   }
 
-  sidebar_container->SetBoundsRect(
+  sidebar_container_->SetBoundsRect(
       views().browser_view->GetMirroredRect(sidebar_bounds));
 
   if (sidebar_separator_) {
@@ -420,30 +416,6 @@ gfx::Insets BraveBrowserViewLayout::GetInsetsConsideringVerticalTabHost()
 #endif
 
   return insets;
-}
-
-views::View* BraveBrowserViewLayout::GetSidebarContainer() const {
-  if (sidebar_container_) {
-    return sidebar_container_;
-  }
-
-  if (sidebar_container_new_) {
-    return sidebar_container_new_;
-  }
-
-  return nullptr;
-}
-
-bool BraveBrowserViewLayout::GetSidebarOnLeft() const {
-  if (sidebar_container_) {
-    return sidebar_container_->sidebar_on_left();
-  }
-
-  if (sidebar_container_new_) {
-    return sidebar_container_new_->sidebar_on_left();
-  }
-
-  NOTREACHED();
 }
 
 #if BUILDFLAG(IS_MAC)

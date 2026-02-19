@@ -17,6 +17,7 @@
 #include "base/time/time.h"
 #include "brave/browser/ui/brave_browser.h"
 #include "brave/browser/ui/color/brave_color_id.h"
+#include "brave/browser/ui/sidebar/features.h"
 #include "brave/browser/ui/sidebar/sidebar_controller.h"
 #include "brave/browser/ui/sidebar/sidebar_model.h"
 #include "brave/browser/ui/sidebar/sidebar_service_factory.h"
@@ -37,6 +38,7 @@
 #include "chrome/browser/profiles/profile.h"
 #include "chrome/browser/ui/browser_window.h"
 #include "chrome/browser/ui/browser_window/public/browser_window_features.h"
+#include "chrome/browser/ui/browser_window/public/browser_window_interface.h"
 #include "chrome/browser/ui/color/chrome_color_id.h"
 #include "chrome/browser/ui/exclusive_access/exclusive_access_manager.h"
 #include "chrome/browser/ui/exclusive_access/fullscreen_controller.h"
@@ -47,6 +49,7 @@
 #include "chrome/browser/ui/views/frame/browser_view.h"
 #include "chrome/browser/ui/views/side_panel/side_panel_entry.h"
 #include "chrome/browser/ui/views/side_panel/side_panel_registry.h"
+#include "chrome/browser/ui/views/side_panel/side_panel_ui.h"
 #include "chrome/browser/ui/views/side_panel/side_panel_web_ui_view.h"
 #include "chrome/browser/ui/views/toolbar/toolbar_view.h"
 #include "components/grit/brave_components_strings.h"
@@ -131,7 +134,17 @@ SidebarContainerView::SidebarContainerView(
   width_animation_.SetSlideDuration(base::Milliseconds(kAnimationDurationMS));
 
   SetNotifyEnterExitOnChild(true);
-  side_panel_ = AddChildView(std::move(side_panel));
+  CHECK(side_panel_coordinator_);
+
+  if (base::FeatureList::IsEnabled(sidebar::features::kSidebarV2)) {
+    CHECK(!side_panel);
+
+    // control view fills the entire.
+    SetUseDefaultFillLayout(true);
+  } else {
+    CHECK(side_panel);
+    side_panel_ = AddChildView(std::move(side_panel));
+  }
 }
 
 SidebarContainerView::~SidebarContainerView() = default;
@@ -141,7 +154,9 @@ void SidebarContainerView::Init() {
 
   sidebar_model_ = browser_->GetFeatures().sidebar_controller()->model();
   sidebar_model_observation_.Observe(sidebar_model_);
-  browser_->tab_strip_model()->AddObserver(this);
+  if (!base::FeatureList::IsEnabled(sidebar::features::kSidebarV2)) {
+    browser_->tab_strip_model()->AddObserver(this);
+  }
 
   show_side_panel_button_.Init(
       kShowSidePanelButton, browser_->profile()->GetPrefs(),
@@ -166,10 +181,12 @@ void SidebarContainerView::SetSidebarOnLeft(bool sidebar_on_left) {
   DCHECK(sidebar_control_view_);
   sidebar_control_view_->SetSidebarOnLeft(sidebar_on_left_);
 
-  DCHECK(side_panel_);
-  side_panel_->SetHorizontalAlignment(
-      sidebar_on_left ? SidePanel::HorizontalAlignment::kLeft
-                      : SidePanel::HorizontalAlignment::kRight);
+  if (!base::FeatureList::IsEnabled(sidebar::features::kSidebarV2)) {
+    CHECK(side_panel_);
+    side_panel_->SetHorizontalAlignment(
+        sidebar_on_left ? SidePanel::HorizontalAlignment::kLeft
+                        : SidePanel::HorizontalAlignment::kRight);
+  }
 }
 
 bool SidebarContainerView::IsSidebarVisible() const {
@@ -205,6 +222,10 @@ void SidebarContainerView::ShowSidebarOnMouseOver(
 }
 
 void SidebarContainerView::WillShowSidePanel() {
+  if (base::FeatureList::IsEnabled(sidebar::features::kSidebarV2)) {
+    return;
+  }
+
   // It's good timing to start observing any panel entries
   // from global and contextual if not yet observed.
   auto* tab_model = browser_->tab_strip_model();
@@ -221,6 +242,8 @@ void SidebarContainerView::WillShowSidePanel() {
 }
 
 bool SidebarContainerView::IsFullscreenForCurrentEntry() const {
+  CHECK(!base::FeatureList::IsEnabled(sidebar::features::kSidebarV2));
+
   // For now, we only supports fullscreen from playlist.
   if (side_panel_coordinator_->GetCurrentEntryId(
           SidePanelEntry::PanelType::kContent) != SidePanelEntryId::kPlaylist) {
@@ -259,6 +282,31 @@ void SidebarContainerView::SetSidebarShowOption(ShowSidebarOption show_option) {
   DVLOG(2) << __func__;
 
   show_sidebar_option_ = show_option;
+
+  if (base::FeatureList::IsEnabled(sidebar::features::kSidebarV2)) {
+    // When panel is visible, option change doesn't affect current UI status.
+    if (IsSidePanelShowing()) {
+      return;
+    }
+
+    if (show_sidebar_option_ == ShowSidebarOption::kShowAlways) {
+      if (!IsSidebarVisible()) {
+        ShowSidebarControlView();
+      }
+      return;
+    }
+
+    if (show_sidebar_option_ == ShowSidebarOption::kShowNever) {
+      HideSidebarAll();
+      return;
+    }
+
+    // kShowOnMouseOver
+    if (!IsMouseHovered()) {
+      HideSidebarAll();
+    }
+    return;
+  }
 
   const bool is_panel_visible = side_panel_->GetVisible();
   if (show_sidebar_option_ == ShowSidebarOption::kShowAlways) {
@@ -324,7 +372,8 @@ void SidebarContainerView::AddChildViews() {
 }
 
 void SidebarContainerView::Layout(PassKey) {
-  if (!initialized_) {
+  if (!initialized_ ||
+      base::FeatureList::IsEnabled(sidebar::features::kSidebarV2)) {
     LayoutSuperclass<views::View>(this);
     return;
   }
@@ -357,6 +406,23 @@ void SidebarContainerView::Layout(PassKey) {
 
 gfx::Size SidebarContainerView::CalculatePreferredSize(
     const views::SizeBounds& available_size) const {
+  if (base::FeatureList::IsEnabled(sidebar::features::kSidebarV2)) {
+    // V2: only the control view is owned here; no panel width included.
+    if (!initialized_ || !sidebar_control_view_->GetVisible() ||
+        IsFullscreenByTab()) {
+      return gfx::Size();
+    }
+
+    if (!width_animation_.is_animating()) {
+      return View::CalculatePreferredSize(available_size);
+    }
+
+    return {gfx::Tween::IntValueBetween(
+                width_animation_.GetCurrentValue(), 0,
+                sidebar_control_view_->GetPreferredSize().width()),
+            0};
+  }
+
   if (!initialized_ || !sidebar_control_view_->GetVisible() ||
       IsFullscreenByTab()) {
     return View::CalculatePreferredSize(available_size);
@@ -411,6 +477,11 @@ bool SidebarContainerView::IsFullscreenByTab() const {
       ->IsWindowFullscreenForTabOrPending();
 }
 
+bool SidebarContainerView::IsSidePanelShowing() const {
+  return side_panel_coordinator_->IsSidePanelShowing(
+      SidePanelEntry::PanelType::kContent);
+}
+
 bool SidebarContainerView::ShouldForceShowSidebar() const {
   // It is more reliable to check whether coordinator has current entry rather
   // than checking if side_panel_ is visible.
@@ -460,6 +531,15 @@ void SidebarContainerView::AnimationProgressed(
 }
 
 void SidebarContainerView::AnimationEnded(const gfx::Animation* animation) {
+  if (base::FeatureList::IsEnabled(sidebar::features::kSidebarV2)) {
+    // V2: simple hide/show of the control view only.
+    if (width_animation_.GetCurrentValue() == 0) {
+      sidebar_control_view_->SetVisible(false);
+    }
+    PreferredSizeChanged();
+    return;
+  }
+
   side_panel_->set_fixed_contents_width(std::nullopt);
 
   PreferredSizeChanged();
@@ -487,6 +567,10 @@ void SidebarContainerView::AnimationEnded(const gfx::Animation* animation) {
 void SidebarContainerView::OnActiveIndexChanged(
     std::optional<size_t> old_index,
     std::optional<size_t> new_index) {
+  if (base::FeatureList::IsEnabled(sidebar::features::kSidebarV2)) {
+    return;
+  }
+
   DVLOG(1) << "OnActiveIndexChanged: "
            << (old_index ? base::NumberToString(*old_index) : "none") << " to "
            << (new_index ? base::NumberToString(*new_index) : "none");
@@ -530,6 +614,28 @@ void SidebarContainerView::ShowSidebarControlView() {
 
 void SidebarContainerView::ShowSidebar(bool show_side_panel) {
   DVLOG(1) << __func__ << ": show panel: " << show_side_panel;
+
+  if (base::FeatureList::IsEnabled(sidebar::features::kSidebarV2)) {
+    // Don't need to show again if it's showing now.
+    if (width_animation_.is_animating() && width_animation_.IsShowing()) {
+      return;
+    }
+
+    if (width_animation_.is_animating() && width_animation_.IsClosing()) {
+      width_animation_.Stop();
+    } else {
+      // Otherwise, reset animation to start from the beginning.
+      width_animation_.Reset();
+    }
+
+    sidebar_control_view_->SetVisible(true);
+
+    if (!ShouldUseAnimation()) {
+      width_animation_.Reset(1.0);
+    }
+    width_animation_.Show();
+    return;
+  }
 
   // Don't need to show again if it's showing now.
   if (width_animation_.is_animating() && width_animation_.IsShowing()) {
@@ -623,6 +729,29 @@ void SidebarContainerView::ShowSidebarAll() {
 void SidebarContainerView::HideSidebar(bool hide_sidebar_control) {
   DVLOG(1) << __func__ << ": hide control: " << hide_sidebar_control;
 
+  if (base::FeatureList::IsEnabled(sidebar::features::kSidebarV2)) {
+    // Don't need to close again if it's closing now.
+    if (width_animation_.is_animating() && width_animation_.IsClosing()) {
+      return;
+    }
+
+    // Stop showing animation and start closing immediately from there.
+    if (width_animation_.is_animating() && width_animation_.IsShowing()) {
+      width_animation_.Stop();
+    } else {
+      // Otherwise, reset animation to hide from the end.
+      width_animation_.Reset(1.0);
+    }
+
+    sidebar_hide_timer_.Stop();
+
+    if (!ShouldUseAnimation()) {
+      width_animation_.Reset();
+    }
+    width_animation_.Hide();
+    return;
+  }
+
   // Don't need to close again if it's closing now.
   if (width_animation_.is_animating() && width_animation_.IsClosing()) {
     DVLOG(1) << __func__ << ": hiding in-progress.";
@@ -679,10 +808,14 @@ void SidebarContainerView::HideSidebarAll() {
 }
 
 void SidebarContainerView::HideSidebarPanel() {
+  CHECK(!base::FeatureList::IsEnabled(sidebar::features::kSidebarV2));
+
   HideSidebar(false);
 }
 
 void SidebarContainerView::HideSidebarForShowOption() {
+  CHECK(!base::FeatureList::IsEnabled(sidebar::features::kSidebarV2));
+
   if (show_sidebar_option_ == ShowSidebarOption::kShowAlways) {
     HideSidebarPanel();
     return;
@@ -702,6 +835,10 @@ void SidebarContainerView::HideSidebarForShowOption() {
 }
 
 bool SidebarContainerView::ShouldUseAnimation() {
+  if (base::FeatureList::IsEnabled(sidebar::features::kSidebarV2)) {
+    return gfx::Animation::ShouldRenderRichAnimation();
+  }
+
   return !operation_from_active_tab_change_ &&
          gfx::Animation::ShouldRenderRichAnimation();
 }
@@ -738,6 +875,8 @@ void SidebarContainerView::StopBrowserWindowEventMonitoring() {
 }
 
 void SidebarContainerView::OnEntryShown(SidePanelEntry* entry) {
+  CHECK(!base::FeatureList::IsEnabled(sidebar::features::kSidebarV2));
+
   // Make sure item is selected. We need to observe the SidePanel system
   // as well as Sidebar as there are other ways than Sidebar for SidePanel
   // items to be shown and hidden, e.g. toolbar button.
@@ -777,6 +916,8 @@ void SidebarContainerView::OnEntryShown(SidePanelEntry* entry) {
 }
 
 void SidebarContainerView::OnEntryHidden(SidePanelEntry* entry) {
+  CHECK(!base::FeatureList::IsEnabled(sidebar::features::kSidebarV2));
+
   DVLOG(1) << "Panel hidden: " << SidePanelEntryIdToString(entry->key().id());
 
   auto* controller = browser_->GetFeatures().sidebar_controller();
@@ -816,6 +957,8 @@ void SidebarContainerView::OnEntryHidden(SidePanelEntry* entry) {
 
 void SidebarContainerView::OnTabWillBeRemoved(tabs::TabInterface* tab,
                                               int index) {
+  CHECK(!base::FeatureList::IsEnabled(sidebar::features::kSidebarV2));
+
   // At this time, we can stop observing as TabFeatures is available.
   if (!tab->GetTabFeatures()) {
     return;
@@ -831,10 +974,24 @@ void SidebarContainerView::OnTabWillBeRemoved(tabs::TabInterface* tab,
   }
 }
 
+void SidebarContainerView::UpdateActiveItemState() {
+  DVLOG(1) << "Update active item state";
+
+  auto* controller = browser_->GetFeatures().sidebar_controller();
+  std::optional<sidebar::SidebarItem::BuiltInItemType> current_type;
+  if (auto entry_id = side_panel_coordinator_->GetCurrentEntryId(
+          SidePanelEntry::PanelType::kContent)) {
+    current_type = sidebar::BuiltInItemTypeFromSidePanelId(*entry_id);
+  }
+  controller->UpdateActiveItemState(current_type);
+}
+
 void SidebarContainerView::OnTabStripModelChanged(
     TabStripModel* tab_strip_model,
     const TabStripModelChange& change,
     const TabStripSelectionChange& selection) {
+  CHECK(!base::FeatureList::IsEnabled(sidebar::features::kSidebarV2));
+
   if ((change.type() == TabStripModelChange::kReplaced)) {
     // Pre-cr129's change
     // https://chromium.googlesource.com/chromium/src/+/2fd6b53ce, we would
@@ -867,6 +1024,8 @@ void SidebarContainerView::OnTabStripModelChanged(
 
 void SidebarContainerView::StartObservingContextualSidePanelEntry(
     content::WebContents* contents) {
+  CHECK(!base::FeatureList::IsEnabled(sidebar::features::kSidebarV2));
+
   auto* tab = tabs::TabInterface::GetFromContents(contents);
   if (!tab->GetTabFeatures()) {
     return;
@@ -907,6 +1066,8 @@ BraveBrowser* SidebarContainerView::GetBraveBrowser() const {
 }
 
 void SidebarContainerView::AddSidePanelEntryObservation(SidePanelEntry* entry) {
+  CHECK(!base::FeatureList::IsEnabled(sidebar::features::kSidebarV2));
+
   if (entry->IsBeingObservedBy(this)) {
     return;
   }
@@ -923,6 +1084,8 @@ void SidebarContainerView::AddSidePanelEntryObservation(SidePanelEntry* entry) {
 
 void SidebarContainerView::RemoveSidePanelEntryObservation(
     SidePanelEntry* entry) {
+  CHECK(!base::FeatureList::IsEnabled(sidebar::features::kSidebarV2));
+
   if (!entry->IsBeingObservedBy(this)) {
     return;
   }

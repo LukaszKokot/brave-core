@@ -13,7 +13,6 @@
 #include "base/debug/crash_logging.h"
 #include "base/debug/dump_without_crashing.h"
 #include "base/logging.h"
-#include "brave/browser/ui/sidebar/sidebar_controller.h"
 #include "brave/browser/ui/sidebar/sidebar_service_factory.h"
 #include "brave/browser/ui/sidebar/sidebar_utils.h"
 #include "brave/browser/ui/views/frame/brave_browser_view.h"
@@ -23,7 +22,6 @@
 #include "brave/components/sidebar/browser/sidebar_service.h"
 #include "brave/grit/brave_generated_resources.h"
 #include "chrome/browser/profiles/profile.h"
-#include "chrome/browser/ui/browser_window/public/browser_window_features.h"
 #include "chrome/browser/ui/views/side_panel/side_panel_entry.h"
 
 namespace {
@@ -105,14 +103,7 @@ void BraveSidePanelCoordinator::OnViewVisibilityChanged(
                                                 visible);
 
   if (update_items_state) {
-    auto* controller =
-        browser_view_->browser()->GetFeatures().sidebar_controller();
-    std::optional<sidebar::SidebarItem::BuiltInItemType> current_type;
-    if (auto entry_id =
-            GetCurrentEntryId(SidePanelEntry::PanelType::kContent)) {
-      current_type = sidebar::BuiltInItemTypeFromSidePanelId(*entry_id);
-    }
-    controller->UpdateActiveItemState(current_type);
+    GetBraveBrowserView()->sidebar_container_view()->UpdateActiveItemState();
   }
 }
 
@@ -172,9 +163,7 @@ void BraveSidePanelCoordinator::PopulateSidePanel(
 
   // Notify to give opportunity to observe another panel entries from
   // global or active tab's contextual registry.
-  if (auto* sidebar = GetBraveBrowserView()->sidebar_container_view()) {
-    sidebar->WillShowSidePanel();
-  }
+  GetBraveBrowserView()->sidebar_container_view()->WillShowSidePanel();
   SidePanelCoordinator::PopulateSidePanel(supress_animations, unique_key,
                                           std::move(open_trigger), entry,
                                           std::move(content_view));

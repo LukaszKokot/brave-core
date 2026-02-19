@@ -57,7 +57,6 @@ class WebContents;
 
 namespace sidebar {
 class SidebarBrowserTest;
-class SidebarV2BrowserTest;
 }  // namespace sidebar
 
 namespace views {
@@ -69,7 +68,6 @@ class BraveHelpBubbleHostView;
 class BraveMultiContentsView;
 class ContentsLayoutManager;
 class SidebarContainerView;
-class SidebarContainerViewNew;
 class SidePanelEntry;
 class VerticalTabStripWidgetDelegateView;
 class ViewShadow;
@@ -262,7 +260,6 @@ class BraveBrowserView : public BrowserView,
   bool closing_confirm_dialog_activated_ = false;
   raw_ptr<BraveHelpBubbleHostView> brave_help_bubble_host_view_ = nullptr;
   raw_ptr<SidebarContainerView> sidebar_container_view_ = nullptr;
-  raw_ptr<SidebarContainerViewNew> sidebar_container_view_new_ = nullptr;
   raw_ptr<views::View> sidebar_separator_view_ = nullptr;
   raw_ptr<views::View> contents_background_view_ = nullptr;
   raw_ptr<views::View> vertical_tab_strip_host_view_ = nullptr;

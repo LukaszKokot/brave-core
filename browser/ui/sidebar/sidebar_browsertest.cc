@@ -32,7 +32,6 @@
 #include "brave/browser/ui/views/side_panel/side_panel.h"
 #include "brave/browser/ui/views/side_panel/side_panel_resize_widget.h"
 #include "brave/browser/ui/views/sidebar/sidebar_container_view.h"
-#include "brave/browser/ui/views/sidebar/sidebar_container_view_new.h"
 #include "brave/browser/ui/views/sidebar/sidebar_control_view.h"
 #include "brave/browser/ui/views/sidebar/sidebar_items_contents_view.h"
 #include "brave/browser/ui/views/sidebar/sidebar_items_scroll_view.h"
@@ -83,7 +82,6 @@
 #include "ui/events/event.h"
 #include "ui/gfx/animation/animation_test_api.h"
 #include "ui/gfx/geometry/point.h"
-#include "ui/views/view_utils.h"
 
 #if BUILDFLAG(ENABLE_AI_CHAT)
 #include "brave/components/ai_chat/core/common/features.h"
@@ -139,16 +137,24 @@ class SidebarBrowserTest : public InProcessBrowserTest {
     return GetSidePanel()->resize_widget_->GetWidget();
   }
 
-  raw_ptr<SidebarItemsContentsView> GetSidebarItemsContentsView() const {
-    auto sidebar_items_contents_view =
-        GetSidebarItemsScrollView()->contents_view_;
+  raw_ptr<SidebarItemsContentsView> GetSidebarItemsContentsView(
+      SidebarController* controller) const {
+    auto* sidebar_container_view =
+        static_cast<SidebarContainerView*>(controller->sidebar());
+    auto sidebar_control_view = sidebar_container_view->sidebar_control_view_;
+    auto sidebar_scroll_view = sidebar_control_view->sidebar_items_view_;
+    auto sidebar_items_contents_view = sidebar_scroll_view->contents_view_;
     DCHECK(sidebar_items_contents_view);
 
     return sidebar_items_contents_view;
   }
 
-  SidebarItemsScrollView* GetSidebarItemsScrollView() const {
-    return GetSidebarControlView()->sidebar_items_view_;
+  SidebarItemsScrollView* GetSidebarItemsScrollView(
+      SidebarController* controller) const {
+    auto* sidebar_container_view =
+        static_cast<SidebarContainerView*>(controller->sidebar());
+    auto sidebar_control_view = sidebar_container_view->sidebar_control_view_;
+    return sidebar_control_view->sidebar_items_view_;
   }
 
   // If the item at |index| is panel item, this will return after waiting
@@ -156,7 +162,8 @@ class SidebarBrowserTest : public InProcessBrowserTest {
   // synchronously. Panel activation is done via SidePanelCoordinator instead of
   // asking activation to SidebarController directly.
   void SimulateSidebarItemClickAt(size_t index) {
-    auto sidebar_items_contents_view = GetSidebarItemsContentsView();
+    auto sidebar_items_contents_view =
+        GetSidebarItemsContentsView(controller());
 
     auto* item = sidebar_items_contents_view->children()[index].get();
     DCHECK(item);
@@ -173,9 +180,6 @@ class SidebarBrowserTest : public InProcessBrowserTest {
   }
 
   SidebarControlView* GetSidebarControlView() const {
-    if (IsV2Enabled()) {
-      return GetSidebarContainerViewNew()->sidebar_control_view_;
-    }
     return GetSidebarContainerView()->sidebar_control_view_;
   }
 
@@ -193,7 +197,7 @@ class SidebarBrowserTest : public InProcessBrowserTest {
 
   bool IsSidebarUIOnLeft() const {
     if (IsV2Enabled()) {
-      return GetSidebarContainerViewNew()->sidebar_on_left() &&
+      return GetSidebarContainerView()->sidebar_on_left_ &&
              GetSidebarControlView()->sidebar_on_left_;
     }
 
@@ -203,18 +207,10 @@ class SidebarBrowserTest : public InProcessBrowserTest {
   }
 
   void ShowSidebar(bool show_side_panel) {
-    if (IsV2Enabled()) {
-      GetSidebarContainerViewNew()->ShowSidebar();
-      return;
-    }
     GetSidebarContainerView()->ShowSidebar(show_side_panel);
   }
 
   void HideSidebar(bool hide_sidebar_control) {
-    if (IsV2Enabled()) {
-      GetSidebarContainerViewNew()->HideSidebar();
-      return;
-    }
     GetSidebarContainerView()->HideSidebar(hide_sidebar_control);
   }
 
@@ -273,7 +269,8 @@ class SidebarBrowserTest : public InProcessBrowserTest {
   }
 
   void VerifyTargetDragIndicatorIndexCalc(const gfx::Point& screen_position) {
-    auto sidebar_items_contents_view = GetSidebarItemsContentsView();
+    auto sidebar_items_contents_view =
+        GetSidebarItemsContentsView(controller());
     EXPECT_NE(std::nullopt,
               sidebar_items_contents_view->CalculateTargetDragIndicatorIndex(
                   screen_position));
@@ -322,14 +319,6 @@ class SidebarBrowserTest : public InProcessBrowserTest {
 
   bool IsV2Enabled() const {
     return base::FeatureList::IsEnabled(sidebar::features::kSidebarV2);
-  }
-
-  SidebarContainerViewNew* GetSidebarContainerViewNew() const {
-    if (!IsV2Enabled()) {
-      ADD_FAILURE() << "V2 must be enabled to call GetSidebarContainerViewNew";
-      return nullptr;
-    }
-    return static_cast<SidebarContainerViewNew*>(controller()->sidebar());
   }
 
   raw_ptr<views::View, DanglingUntriaged> item_added_bubble_anchor_ = nullptr;
@@ -450,11 +439,9 @@ IN_PROC_BROWSER_TEST_P(SidebarBrowserTestV1AndV2, BasicTest) {
       base::BindLambdaForTesting([&]() { return !!model()->active_index(); }));
   EXPECT_THAT(model()->active_index(), Optional(active_item_index));
 
-  // Common: Item manipulation works in both V1 and V2
   auto* sidebar_service =
       SidebarServiceFactory::GetForProfile(browser()->profile());
 
-  // const size_t first_panel_item_index = GetFirstPanelItemIndex();
   // Move active item to the next index to make sure it's not the first item.
   sidebar_service->MoveItem(first_panel_item_index, first_panel_item_index + 1);
   active_item_index++;
@@ -747,7 +734,7 @@ IN_PROC_BROWSER_TEST_P(SidebarBrowserTestV1AndV2, InitialHorizontalOptionTest) {
 
 // Category A:
 IN_PROC_BROWSER_TEST_P(SidebarBrowserTestV1AndV2, ItemDragIndicatorCalcTest) {
-  auto sidebar_items_contents_view = GetSidebarItemsContentsView();
+  auto sidebar_items_contents_view = GetSidebarItemsContentsView(controller());
   gfx::Rect contents_view_rect = sidebar_items_contents_view->GetLocalBounds();
   views::View::ConvertRectToScreen(sidebar_items_contents_view,
                                    &contents_view_rect);
@@ -1150,7 +1137,7 @@ IN_PROC_BROWSER_TEST_P(SidebarBrowserTestV1AndV2,
                        ItemAddedBubbleAnchorViewTest) {
   auto* sidebar_service =
       SidebarServiceFactory::GetForProfile(browser()->profile());
-  auto sidebar_items_contents_view = GetSidebarItemsContentsView();
+  auto sidebar_items_contents_view = GetSidebarItemsContentsView(controller());
   SetItemAddedBubbleLaunchedCallback(sidebar_items_contents_view);
   size_t lastly_added_item_index = 0;
 
@@ -1197,7 +1184,7 @@ IN_PROC_BROWSER_TEST_P(SidebarBrowserTestV1AndV2, ItemActivatedScrollTest) {
 
   auto* sidebar_service =
       SidebarServiceFactory::GetForProfile(browser()->profile());
-  auto* scroll_view = GetSidebarItemsScrollView();
+  auto* scroll_view = GetSidebarItemsScrollView(controller());
 
   // Move bookmark item at zero index to make it hidden.
   sidebar_service->MoveItem(*bookmark_item_index, 0);
@@ -1209,6 +1196,8 @@ IN_PROC_BROWSER_TEST_P(SidebarBrowserTestV1AndV2, ItemActivatedScrollTest) {
 
   // Open bookmark panel.
   if (IsV2Enabled()) {
+    // Use panel->Show() when V2 is enabled by default.
+    // Item should be responded by panel activation.
     controller()->ActivateItemAt(
         model()->GetIndexOf(SidebarItem::BuiltInItemType::kBookmarks));
   } else {
@@ -1231,8 +1220,8 @@ IN_PROC_BROWSER_TEST_P(SidebarBrowserTestV1AndV2, ItemAddedScrollTest) {
 
   auto* sidebar_service =
       SidebarServiceFactory::GetForProfile(browser()->profile());
-  auto* scroll_view = GetSidebarItemsScrollView();
-  auto sidebar_items_contents_view = GetSidebarItemsContentsView();
+  auto* scroll_view = GetSidebarItemsScrollView(controller());
+  auto sidebar_items_contents_view = GetSidebarItemsContentsView(controller());
 
   AddItemsTillScrollable(scroll_view, sidebar_service);
 
@@ -1864,12 +1853,7 @@ IN_PROC_BROWSER_TEST_P(SidebarBrowserTestV1AndV2, SidebarRightSideTest) {
 
   auto* prefs = browser()->profile()->GetPrefs();
   auto* vertical_tabs_container = GetVerticalTabsContainer();
-  views::View* sidebar_container = nullptr;
-  if (IsV2Enabled()) {
-    sidebar_container = GetSidebarContainerViewNew();
-  } else {
-    sidebar_container = GetSidebarContainerView();
-  }
+  views::View* sidebar_container = GetSidebarContainerView();
 
   // Check if vertical tabs is located at first and sidebar is located on the
   // right side.

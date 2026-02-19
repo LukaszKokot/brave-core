@@ -42,7 +42,6 @@
 #include "brave/browser/ui/views/location_bar/brave_location_bar_view.h"
 #include "brave/browser/ui/views/omnibox/brave_omnibox_view_views.h"
 #include "brave/browser/ui/views/sidebar/sidebar_container_view.h"
-#include "brave/browser/ui/views/sidebar/sidebar_container_view_new.h"
 #include "brave/browser/ui/views/tabs/vertical_tab_utils.h"
 #include "brave/browser/ui/views/toolbar/bookmark_button.h"
 #include "brave/browser/ui/views/toolbar/brave_toolbar_view.h"
@@ -353,11 +352,11 @@ BraveBrowserView::BraveBrowserView(Browser* browser) : BrowserView(browser) {
   const bool can_have_sidebar = sidebar::CanUseSidebar(browser_);
   if (can_have_sidebar) {
     if (base::FeatureList::IsEnabled(sidebar::features::kSidebarV2)) {
-      // V2: Don't wrap panel - let upstream manage it
-      sidebar_container_view_new_ =
-          AddChildView(std::make_unique<SidebarContainerViewNew>(browser_));
+      sidebar_container_view_ =
+          AddChildView(std::make_unique<SidebarContainerView>(
+              browser_, SidePanelCoordinator::From(browser_), nullptr));
     } else {
-      // V1: Wrap chromium side panel with our sidebar container
+      // V1: wrap chromium's side panel inside SidebarContainerView.
       auto original_side_panel =
           RemoveChildViewT(contents_height_side_panel_.get());
       sidebar_container_view_ =
@@ -424,15 +423,12 @@ void BraveBrowserView::OnPreferenceChanged(const std::string& pref_name) {
 }
 
 void BraveBrowserView::UpdateSideBarHorizontalAlignment() {
+  DCHECK(sidebar_container_view_);
+
   const bool on_left = !GetProfile()->GetPrefs()->GetBoolean(
       prefs::kSidePanelHorizontalAlignment);
 
-  if (sidebar_container_view_new_) {
-    sidebar_container_view_new_->SetSidebarOnLeft(on_left);
-  } else {
-    CHECK(sidebar_container_view_);
-    sidebar_container_view_->SetSidebarOnLeft(on_left);
-  }
+  sidebar_container_view_->SetSidebarOnLeft(on_left);
 
   if (multi_contents_view_ &&
       base::FeatureList::IsEnabled(sidebar::features::kSidebarWebPanel)) {
@@ -464,15 +460,9 @@ BraveBrowserView::~BraveBrowserView() {
 
 sidebar::Sidebar* BraveBrowserView::InitSidebar() {
   // Start Sidebar UI initialization.
-  sidebar::Sidebar* sidebar = nullptr;
-  if (sidebar_container_view_new_) {
-    sidebar = sidebar_container_view_new_;
-    sidebar_container_view_new_->Init();
-  } else {
-    CHECK(sidebar_container_view_);
-    sidebar = sidebar_container_view_;
-    sidebar_container_view_->Init();
-  }
+  DCHECK(sidebar_container_view_);
+  sidebar_container_view_->Init();
+
   // Ask BraveMultiContentsView for preparing web panel feature.
   if (multi_contents_view_ &&
       base::FeatureList::IsEnabled(sidebar::features::kSidebarWebPanel)) {
@@ -483,7 +473,7 @@ sidebar::Sidebar* BraveBrowserView::InitSidebar() {
 
   UpdateSideBarHorizontalAlignment();
 
-  return sidebar;
+  return sidebar_container_view_;
 }
 
 void BraveBrowserView::ToggleSidebar() {
@@ -747,8 +737,6 @@ void BraveBrowserView::AddedToWidget() {
 
   GetBrowserViewLayout()->set_contents_background(contents_background_view_);
   GetBrowserViewLayout()->set_sidebar_container(sidebar_container_view_);
-  GetBrowserViewLayout()->set_sidebar_container_new(
-      sidebar_container_view_new_);
   GetBrowserViewLayout()->set_sidebar_separator(sidebar_separator_view_);
 
   UpdateWebViewRoundedCorners();
@@ -936,10 +924,6 @@ void BraveBrowserView::OnWidgetActivationChanged(views::Widget* widget,
   if (sidebar_container_view_) {
     sidebar_container_view_->UpdateSidebarItemsState();
   }
-
-  if (sidebar_container_view_new_) {
-    sidebar_container_view_new_->UpdateSidebarItemsState();
-  }
 }
 
 void BraveBrowserView::OnWidgetWindowModalVisibilityChanged(
@@ -1086,10 +1070,6 @@ void BraveBrowserView::UpdateSidebarBorder() {
   if (sidebar_container_view_) {
     sidebar_container_view_->UpdateBorder();
   }
-
-  if (sidebar_container_view_new_) {
-    sidebar_container_view_new_->UpdateBorder();
-  }
 }
 
 void BraveBrowserView::OnActiveTabChanged(content::WebContents* old_contents,
@@ -1212,10 +1192,6 @@ void BraveBrowserView::HandleBrowserWindowMouseEvent(
     sidebar_container_view_->ShowSidebarOnMouseOver(point_in_screen);
   }
 
-  if (sidebar_container_view_new_) {
-    sidebar_container_view_new_->ShowSidebarOnMouseOver(point_in_screen);
-  }
-
   if (vertical_tab_strip_widget_delegate_view_ &&
       tabs::utils::ShouldShowBraveVerticalTabs(browser())) {
     vertical_tab_strip_widget_delegate_view_->vertical_tab_strip_region_view()
@@ -1239,10 +1215,6 @@ bool BraveBrowserView::IsWebPanelContents(content::WebContents* contents) {
 }
 
 bool BraveBrowserView::IsSidebarVisible() const {
-  if (sidebar_container_view_new_) {
-    return sidebar_container_view_new_->IsSidebarVisible();
-  }
-
   return sidebar_container_view_ && sidebar_container_view_->IsSidebarVisible();
 }
 

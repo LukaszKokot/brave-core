@@ -131,6 +131,8 @@ class SidebarContainerView : public sidebar::Sidebar,
       const TabStripSelectionChange& selection) override;
   void OnTabWillBeRemoved(tabs::TabInterface* tab, int index) override;
 
+  void UpdateActiveItemState();
+
  private:
   friend class sidebar::SidebarBrowserTest;
 
@@ -158,6 +160,7 @@ class SidebarContainerView : public sidebar::Sidebar,
   // Call this when want to hide and only want to consider show opton.
   void HideSidebarForShowOption();
 
+  bool IsSidePanelShowing() const;
   bool ShouldForceShowSidebar() const;
   void UpdateToolbarButtonVisibility();
 
