@@ -326,6 +326,7 @@ class SidebarBrowserTest : public InProcessBrowserTest {
 
   SidebarContainerViewNew* GetSidebarContainerViewNew() const {
     if (!IsV2Enabled()) {
+      ADD_FAILURE() << "V2 must be enabled to call GetSidebarContainerViewNew";
       return nullptr;
     }
     return static_cast<SidebarContainerViewNew*>(controller()->sidebar());
@@ -1186,10 +1187,6 @@ IN_PROC_BROWSER_TEST_P(SidebarBrowserTestV1AndV2,
 
 // Category A:
 IN_PROC_BROWSER_TEST_P(SidebarBrowserTestV1AndV2, ItemActivatedScrollTest) {
-  // if (IsV2Enabled()) {
-  //   GTEST_SKIP() << "Panel activation scroll testing is V1-specific";
-  // }
-
   // To prevent item added bubble launching.
   auto* prefs = browser()->profile()->GetPrefs();
   prefs->SetInteger(sidebar::kSidebarItemAddedFeedbackBubbleShowCount, 3);

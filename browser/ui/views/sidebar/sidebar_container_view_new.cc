@@ -14,6 +14,7 @@
 #include "base/time/time.h"
 #include "brave/browser/ui/brave_browser.h"
 #include "brave/browser/ui/color/brave_color_id.h"
+#include "brave/browser/ui/sidebar/features.h"
 #include "brave/browser/ui/sidebar/sidebar_controller.h"
 #include "brave/browser/ui/sidebar/sidebar_service_factory.h"
 #include "brave/browser/ui/views/frame/brave_browser_view.h"
@@ -89,8 +90,9 @@ SidebarContainerViewNew::SidebarContainerViewNew(BrowserWindowInterface* bwi)
       browser_window_interface_(bwi),
       browser_window_event_observer_(
           std::make_unique<BrowserWindowEventObserver>(*this)) {
-  constexpr int kAnimationDurationMS = 150;
-  width_animation_.SetSlideDuration(base::Milliseconds(kAnimationDurationMS));
+  CHECK(base::FeatureList::IsEnabled(sidebar::features::kSidebarV2));
+  constexpr base::TimeDelta kAnimationDuration = base::Milliseconds(150);
+  width_animation_.SetSlideDuration(kAnimationDuration);
   SetNotifyEnterExitOnChild(true);
   SetUseDefaultFillLayout(true);
 }
