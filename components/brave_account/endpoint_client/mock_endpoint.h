@@ -6,6 +6,9 @@
 #ifndef BRAVE_COMPONENTS_BRAVE_ACCOUNT_ENDPOINT_CLIENT_MOCK_ENDPOINT_H_
 #define BRAVE_COMPONENTS_BRAVE_ACCOUNT_ENDPOINT_CLIENT_MOCK_ENDPOINT_H_
 
+#include <functional>
+#include <memory>
+#include <utility>
 #include <variant>
 
 #include "base/json/json_reader.h"
@@ -101,32 +104,21 @@ class MockEndpoint {
 
   template <typename F>
   void WillSuccess(F&& on_call) {
-    auto call = [&](RequestDataType data) ->
-        typename Endpoint::Response::SuccessBody {
-          return std::invoke(std::forward<F>(on_call), std::move(data));
-        };
-    WillSuccess(base::BindLambdaForTesting(std::move(call)));
+    WillSuccess(base::BindLambdaForTesting(std::move(on_call)));
   }
 
   void WillSuccess(Success on_call) { on_call_handler_ = std::move(on_call); }
 
   template <typename F>
   void WillFail(F&& on_call) {
-    auto call = [&](RequestDataType data) ->
-        typename Endpoint::Response::ErrorBody {
-          return std::invoke(std::forward<F>(on_call), std::move(data));
-        };
-    WillFail(base::BindLambdaForTesting(std::move(call)));
+    WillFail(base::BindLambdaForTesting(std::move(on_call)));
   }
 
   void WillFail(Fail on_call) { on_call_handler_ = std::move(on_call); }
 
   template <typename F>
   void WillHttpFail(F&& on_call) {
-    auto call = [&](RequestDataType data) -> net::HttpStatusCode {
-      return std::invoke(std::forward<F>(on_call), std::move(data));
-    };
-    WillHttpFail(base::BindLambdaForTesting(std::move(call)));
+    WillHttpFail(base::BindLambdaForTesting(std::move(on_call)));
   }
 
   void WillHttpFail(HttpFail on_call) { on_call_handler_ = std::move(on_call); }
