@@ -12,6 +12,7 @@
 #include "brave/browser/updater/buildflags.h"
 #include "brave/components/ai_chat/core/common/buildflags/buildflags.h"
 #include "brave/components/ai_rewriter/common/buildflags/buildflags.h"
+#include "brave/components/brave_account/features.h"
 #include "brave/components/brave_ads/buildflags/buildflags.h"
 #include "brave/components/brave_component_updater/browser/features.h"
 #include "brave/components/brave_education/buildflags.h"
@@ -25,6 +26,7 @@
 #include "brave/components/containers/buildflags/buildflags.h"
 #include "brave/components/de_amp/common/features.h"
 #include "brave/components/debounce/core/common/features.h"
+#include "brave/components/email_aliases/features.h"
 #include "brave/components/google_sign_in_permission/features.h"
 #include "brave/components/local_ai/common/features.h"
 #include "brave/components/playlist/core/common/features.h"
@@ -1296,6 +1298,24 @@ constexpr flags_ui::FeatureEntry::Choice kVerticalTabCollapseDelayChoices[] = {
           "closing a site or terminating the application.",                    \
           kOsAll,                                                              \
           FEATURE_VALUE_TYPE(brave_shields::features::kBraveShredFeature),     \
+      },                                                                       \
+      {                                                                        \
+          "brave-account",                                                     \
+          "Enable Brave Account Feature",                                      \
+          "Enable the Brave Account feature which will allow you to easily "   \
+          "access Brave services.",                                            \
+          kOsAll,                                                              \
+          FEATURE_VALUE_TYPE(brave_account::features::kBraveAccount),          \
+      },                                                                       \
+      {                                                                        \
+          "brave-email-aliases",                                               \
+          "Enable Email Aliases Feature (requires brave-account)",             \
+          "Enable the Email Aliases feature which will allow you to create "   \
+          "unique, random addresses that forward to your Brave account "       \
+          "email. It keeps your actual email address from being disclosed or " \
+          "used by advertisers.",                                              \
+          kOsAll,                                                              \
+          FEATURE_VALUE_TYPE(email_aliases::features::kEmailAliases),          \
       })                                                                       \
   BRAVE_NATIVE_WALLET_FEATURE_ENTRIES                                          \
   BRAVE_NEWS_FEATURE_ENTRIES                                                   \
