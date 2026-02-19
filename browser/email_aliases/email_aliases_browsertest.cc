@@ -103,9 +103,9 @@ class EmailAliasesBrowserTestBase : public InProcessBrowserTest {
           return create;
         });
     update_alias_.WillSuccess([](email_aliases::UpdateAliasRequest request) {
-      email_aliases::AliasEditedResponse udpate;
-      udpate.message = "updated";
-      return udpate;
+      email_aliases::AliasEditedResponse update;
+      update.message = "updated";
+      return update;
     });
 
     https_server_.ServeFilesFromDirectory(
