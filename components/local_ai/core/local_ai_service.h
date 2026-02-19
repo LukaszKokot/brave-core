@@ -10,8 +10,10 @@
 #include <string>
 #include <vector>
 
+#include "base/containers/flat_map.h"
 #include "base/functional/callback.h"
 #include "base/memory/weak_ptr.h"
+#include "base/timer/timer.h"
 #include "brave/components/local_ai/core/background_web_ui.h"
 #include "brave/components/local_ai/core/local_ai.mojom.h"
 #include "components/keyed_service/core/keyed_service.h"
@@ -29,6 +31,7 @@ namespace local_ai {
 // - Communication between the browser process and the renderer via Mojo
 // - Request queueing while the model initializes
 // - Cleanup on shutdown and renderer crash
+// - Automatic cleanup after idle timeout to free memory
 class LocalAIService : public KeyedService,
                        public mojom::LocalAIService,
                        public BackgroundWebUI::Delegate {
@@ -39,6 +42,11 @@ class LocalAIService : public KeyedService,
   using BackgroundWebUIFactory =
       base::RepeatingCallback<std::unique_ptr<BackgroundWebUI>(
           BackgroundWebUI::Delegate* delegate)>;
+
+  // Timeout before closing the BackgroundWebContents. Used as a
+  // connection timeout (worker failed to register) and an idle timeout
+  // (no in-flight requests after last response).
+  static constexpr base::TimeDelta kCloseTimeout = base::Seconds(30);
 
   explicit LocalAIService(BackgroundWebUIFactory factory);
   ~LocalAIService() override;
@@ -92,6 +100,19 @@ class LocalAIService : public KeyedService,
   std::vector<PendingRequest> pending_requests_;
 
   void ProcessPendingRequests();
+  void ForwardRequest(const std::string& text,
+                      GenerateEmbeddingsCallback callback);
+  void OnRequestComplete(uint64_t request_id,
+                         const std::vector<double>& result);
+  void MaybeStartIdleTimer();
+  void DrainInFlightRequests();
+
+  // In-flight requests dispatched to the model worker awaiting response.
+  // Stored here so we can drain them before resetting the remote.
+  base::flat_map<uint64_t, GenerateEmbeddingsCallback> in_flight_requests_;
+  uint64_t next_request_id_ = 0;
+
+  base::OneShotTimer close_timer_;
 
   base::WeakPtrFactory<LocalAIService> weak_ptr_factory_{this};
 };
