@@ -630,10 +630,11 @@ void SidebarContainerView::ShowSidebar(bool show_side_panel) {
 
     sidebar_control_view_->SetVisible(true);
 
-    if (!ShouldUseAnimation()) {
-      width_animation_.Reset(1.0);
+    if (ShouldUseAnimation()) {
+      width_animation_.Show();
+    } else {
+      PreferredSizeChanged();
     }
-    width_animation_.Show();
     return;
   }
 
@@ -745,10 +746,12 @@ void SidebarContainerView::HideSidebar(bool hide_sidebar_control) {
 
     sidebar_hide_timer_.Stop();
 
-    if (!ShouldUseAnimation()) {
-      width_animation_.Reset();
+    if (ShouldUseAnimation()) {
+      width_animation_.Hide();
+    } else {
+      sidebar_control_view_->SetVisible(false);
+      PreferredSizeChanged();
     }
-    width_animation_.Hide();
     return;
   }
 
