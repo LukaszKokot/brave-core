@@ -67,7 +67,11 @@ void MiscAndroidMetrics::RecordSetAsDefault(bool is_default) {
 }
 
 void MiscAndroidMetrics::RecordQuickSearch(bool is_leo,
-                                           const std::string& keyword) {}
+                                           const std::string& keyword) {
+  if (brave_search_metrics_) {
+    brave_search_metrics_->MaybeRecordQuickSearch(is_leo, keyword);
+  }
+}
 
 void MiscAndroidMetrics::RecordIntentURL(const std::string& url) {
   if (!brave_search_metrics_) {
