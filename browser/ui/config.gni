@@ -6,6 +6,7 @@
 import("//brave/components/ai_chat/core/common/buildflags/buildflags.gni")
 import("//brave/components/brave_ads/buildflags/buildflags.gni")
 import("//brave/components/brave_news/common/buildflags/buildflags.gni")
+import("//brave/components/brave_wallet/common/buildflags/buildflags.gni")
 import("//brave/components/containers/buildflags/buildflags.gni")
 import("//brave/components/speedreader/common/buildflags/buildflags.gni")
 import("//build/config/ui.gni")
@@ -52,6 +53,11 @@ if (toolkit_views) {
   if (enable_ai_chat) {
     brave_ui_allow_circular_includes_from +=
         [ "//brave/browser/ui/views/side_panel/ai_chat" ]
+  }
+
+  if (enable_brave_wallet) {
+    brave_ui_allow_circular_includes_from +=
+        [ "//brave/browser/ui/views/side_panel/wallet" ]
   }
 
   if (enable_containers) {

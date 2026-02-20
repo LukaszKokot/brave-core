@@ -44,6 +44,7 @@
 
 #if BUILDFLAG(ENABLE_BRAVE_WALLET)
 #include "brave/components/brave_wallet/browser/brave_wallet_utils.h"
+#include "brave/components/brave_wallet/common/features.h"
 #endif  // BUILDFLAG(ENABLE_BRAVE_WALLET)
 
 #if BUILDFLAG(ENABLE_AI_CHAT)
@@ -625,8 +626,16 @@ SidebarItem SidebarService::GetBuiltInItemForType(
     case SidebarItem::BuiltInItemType::kWallet: {
 #if BUILDFLAG(ENABLE_BRAVE_WALLET)
       if (brave_wallet::IsAllowed(prefs_)) {
+        if (base::FeatureList::IsEnabled(
+                brave_wallet::features::kBraveWalletSidePanel)) {
+          return SidebarItem::Create(
+              l10n_util::GetStringUTF16(IDS_SIDEBAR_WALLET_ITEM_TITLE),
+              SidebarItem::Type::kTypeBuiltIn,
+              SidebarItem::BuiltInItemType::kWallet,
+              /* open_in_panel = */ true);
+        }
         return SidebarItem::Create(
-            GURL("chrome://wallet/"),
+            GURL(kBraveUIWalletPageURL),
             l10n_util::GetStringUTF16(IDS_SIDEBAR_WALLET_ITEM_TITLE),
             SidebarItem::Type::kTypeBuiltIn,
             SidebarItem::BuiltInItemType::kWallet,
