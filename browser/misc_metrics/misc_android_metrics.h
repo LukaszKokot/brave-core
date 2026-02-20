@@ -6,6 +6,8 @@
 #ifndef BRAVE_BROWSER_MISC_METRICS_MISC_ANDROID_METRICS_H_
 #define BRAVE_BROWSER_MISC_METRICS_MISC_ANDROID_METRICS_H_
 
+#include <string>
+
 #include "base/memory/raw_ptr.h"
 #include "base/time/time.h"
 #include "brave/components/misc_metrics/common/misc_metrics.mojom.h"
@@ -15,12 +17,14 @@ class SearchEngineTracker;
 
 namespace misc_metrics {
 
+class BraveSearchMetrics;
 class ProcessMiscMetrics;
 
 class MiscAndroidMetrics : public mojom::MiscAndroidMetrics {
  public:
   MiscAndroidMetrics(ProcessMiscMetrics* misc_metrics,
-                     SearchEngineTracker* search_engine_tracker);
+                     SearchEngineTracker* search_engine_tracker,
+                     BraveSearchMetrics* brave_search_metrics);
   ~MiscAndroidMetrics() override;
 
   MiscAndroidMetrics(const MiscAndroidMetrics&) = delete;
@@ -37,10 +41,12 @@ class MiscAndroidMetrics : public mojom::MiscAndroidMetrics {
   void RecordTabSwitcherNewTab() override;
   void RecordSetAsDefault(bool is_default) override;
   void RecordQuickSearch(bool is_leo, const std::string& keyword) override;
+  void RecordIntentURL(const std::string& url) override;
 
  private:
   raw_ptr<ProcessMiscMetrics> misc_metrics_;
   raw_ptr<SearchEngineTracker> search_engine_tracker_;
+  raw_ptr<BraveSearchMetrics> brave_search_metrics_;
 
   mojo::ReceiverSet<mojom::MiscAndroidMetrics> receivers_;
 };
