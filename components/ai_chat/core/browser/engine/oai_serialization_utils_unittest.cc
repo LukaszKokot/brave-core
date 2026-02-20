@@ -1,4 +1,4 @@
-/* Copyright (c) 2025 The Brave Authors. All rights reserved.
+/* Copyright (c) 2026 The Brave Authors. All rights reserved.
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at https://mozilla.org/MPL/2.0/. */
@@ -11,9 +11,7 @@
 
 namespace ai_chat {
 
-class OAISerializationUtilsTest : public testing::Test {};
-
-TEST_F(OAISerializationUtilsTest, MemoryContentBlockToDict_StringValues) {
+TEST(OAISerializationUtilsTest, MemoryContentBlockToDict_StringValues) {
   auto block = mojom::MemoryContentBlock::New();
   block->memory["name"] = mojom::MemoryValue::NewStringValue("Alice");
   block->memory["city"] = mojom::MemoryValue::NewStringValue("NYC");
@@ -29,7 +27,7 @@ TEST_F(OAISerializationUtilsTest, MemoryContentBlockToDict_StringValues) {
   EXPECT_EQ(*city, "NYC");
 }
 
-TEST_F(OAISerializationUtilsTest, MemoryContentBlockToDict_ListValues) {
+TEST(OAISerializationUtilsTest, MemoryContentBlockToDict_ListValues) {
   auto block = mojom::MemoryContentBlock::New();
   block->memory["hobbies"] =
       mojom::MemoryValue::NewListValue({"reading", "coding"});
@@ -43,7 +41,7 @@ TEST_F(OAISerializationUtilsTest, MemoryContentBlockToDict_ListValues) {
   EXPECT_EQ((*hobbies)[1].GetString(), "coding");
 }
 
-TEST_F(OAISerializationUtilsTest, MemoryContentBlockToDict_MixedValues) {
+TEST(OAISerializationUtilsTest, MemoryContentBlockToDict_MixedValues) {
   auto block = mojom::MemoryContentBlock::New();
   block->memory["name"] = mojom::MemoryValue::NewStringValue("Bob");
   block->memory["langs"] = mojom::MemoryValue::NewListValue({"C++", "Python"});
@@ -61,13 +59,13 @@ TEST_F(OAISerializationUtilsTest, MemoryContentBlockToDict_MixedValues) {
   EXPECT_EQ((*langs)[1].GetString(), "Python");
 }
 
-TEST_F(OAISerializationUtilsTest, MemoryContentBlockToDict_Empty) {
+TEST(OAISerializationUtilsTest, MemoryContentBlockToDict_Empty) {
   auto block = mojom::MemoryContentBlock::New();
   auto dict = MemoryContentBlockToDict(*block);
   EXPECT_TRUE(dict.empty());
 }
 
-TEST_F(OAISerializationUtilsTest, FileContentBlockToDict) {
+TEST(OAISerializationUtilsTest, FileContentBlockToDict) {
   auto block = mojom::FileContentBlock::New();
   block->filename = "test.pdf";
   block->file_data = GURL("data:application/pdf;base64,abc123");
@@ -83,7 +81,7 @@ TEST_F(OAISerializationUtilsTest, FileContentBlockToDict) {
   EXPECT_EQ(*file_data, "data:application/pdf;base64,abc123");
 }
 
-TEST_F(OAISerializationUtilsTest, ImageContentBlockToDict) {
+TEST(OAISerializationUtilsTest, ImageContentBlockToDict) {
   auto block = mojom::ImageContentBlock::New();
   block->image_url = GURL("data:image/png;base64,xyz789");
 
