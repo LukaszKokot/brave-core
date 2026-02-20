@@ -196,8 +196,9 @@ void UpdateBraveVpn(const base::FilePath& target_path,
   base::FilePath archive_dst(installer_dir.Append(archive_path.BaseName()));  \
   if (archive_path != archive_dst) {                                          \
     if (temp_path.IsParent(archive_path)) {                                   \
-      install_list->AddMoveTreeWorkItem(archive_path, archive_dst, temp_path, \
-                                        WorkItem::ALWAYS_MOVE);               \
+      install_list->AddMoveTreeWorkItem(                                      \
+          archive_path, archive_dst, temp_path,                               \
+          WorkItem::MoveTreeOptions{.lenient_deletion = true});               \
     } else {                                                                  \
       install_list->AddCopyTreeWorkItem(archive_path, archive_dst, temp_path, \
                                         WorkItem::ALWAYS);                    \
