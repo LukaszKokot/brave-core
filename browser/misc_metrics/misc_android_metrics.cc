@@ -62,4 +62,7 @@ void MiscAndroidMetrics::RecordSetAsDefault(bool is_default) {
       is_default);
 }
 
+void MiscAndroidMetrics::RecordQuickSearch(bool is_leo,
+                                           const std::string& keyword) {}
+
 }  // namespace misc_metrics

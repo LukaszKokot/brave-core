@@ -36,6 +36,7 @@ class MiscAndroidMetrics : public mojom::MiscAndroidMetrics {
   void RecordAppMenuNewTab() override;
   void RecordTabSwitcherNewTab() override;
   void RecordSetAsDefault(bool is_default) override;
+  void RecordQuickSearch(bool is_leo, const std::string& keyword) override;
 
  private:
   raw_ptr<ProcessMiscMetrics> misc_metrics_;
