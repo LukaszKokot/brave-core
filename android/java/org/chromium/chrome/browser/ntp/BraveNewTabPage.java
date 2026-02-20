@@ -10,6 +10,7 @@ import static org.chromium.build.NullUtil.assertNonNull;
 import android.app.Activity;
 import android.view.LayoutInflater;
 
+import org.chromium.base.Callback;
 import org.chromium.base.supplier.MonotonicObservableSupplier;
 import org.chromium.base.supplier.NonNullObservableSupplier;
 import org.chromium.base.supplier.OneshotSupplier;
@@ -19,6 +20,7 @@ import org.chromium.build.annotations.Nullable;
 import org.chromium.chrome.R;
 import org.chromium.chrome.browser.browser_controls.BrowserControlsStateProvider;
 import org.chromium.chrome.browser.feed.BraveFeedSurfaceCoordinator;
+import org.chromium.chrome.browser.feed.FeedActionDelegate;
 import org.chromium.chrome.browser.feed.FeedFeatures;
 import org.chromium.chrome.browser.feed.FeedSurfaceCoordinator;
 import org.chromium.chrome.browser.feed.FeedSurfaceProvider;
@@ -43,6 +45,7 @@ import org.chromium.chrome.browser.ui.messages.snackbar.SnackbarManager;
 import org.chromium.chrome.browser.ui.native_page.NativePageHost;
 import org.chromium.components.browser_ui.bottomsheet.BottomSheetController;
 import org.chromium.components.search_engines.TemplateUrlService;
+import org.chromium.content_public.browser.LoadUrlParams;
 import org.chromium.ui.base.ActivityResultTracker;
 import org.chromium.ui.base.WindowAndroid;
 import org.chromium.ui.modaldialog.ModalDialogManager;
@@ -148,9 +151,11 @@ public class BraveNewTabPage extends NewTabPage {
     protected void initializeMainView(
             Activity activity,
             WindowAndroid windowAndroid,
+            ActivityResultTracker activityResultTracker,
             SnackbarManager snackbarManager,
             boolean isInNightMode,
             Supplier<@Nullable ShareDelegate> shareDelegateSupplier,
+            Supplier<@Nullable ModalDialogManager> modalDialogManagerSupplier,
             String url,
             MonotonicObservableSupplier<EdgeToEdgeController> edgeToEdgeControllerSupplier,
             StartupMetricsTracker startupMetricsTracker) {
@@ -165,6 +170,24 @@ public class BraveNewTabPage extends NewTabPage {
         assertNonNull(mToolbarSupplier);
         assertNonNull(mTabStripHeightSupplier);
         assert !FeedFeatures.isFeedEnabled(profile);
+
+        FeedSurfaceCoordinator.ActionDelegateFactory createActionDelegate =
+                () ->
+                        new FeedActionDelegate() {
+                            @Override
+                            public void openSuggestionUrl(
+                                    int disposition,
+                                    LoadUrlParams params,
+                                    boolean inGroup,
+                                    int pageId,
+                                    FeedActionDelegate.PageLoadObserver pageLoadObserver,
+                                    Callback<FeedActionDelegate.VisitResult> onVisitComplete) {
+                                if (onVisitComplete != null) {
+                                    onVisitComplete.onResult(new FeedActionDelegate.VisitResult());
+                                }
+                            }
+                        };
+
         FeedSurfaceCoordinator feedSurfaceCoordinator =
                 new BraveFeedSurfaceCoordinator(
                         activity,
@@ -186,10 +209,10 @@ public class BraveNewTabPage extends NewTabPage {
                         FeedSwipeRefreshLayout.create(activity, R.id.toolbar_container),
                         /* overScrollDisabled= */ false,
                         /* viewportView= */ null,
-                        /* actionDelegate= */ null,
+                        createActionDelegate,
                         mTabStripHeightSupplier,
                         edgeToEdgeControllerSupplier,
-                        /*moduleRegistry */ null);
+                        /* moduleRegistry= */ null);
 
         mFeedSurfaceProvider = feedSurfaceCoordinator;
     }
