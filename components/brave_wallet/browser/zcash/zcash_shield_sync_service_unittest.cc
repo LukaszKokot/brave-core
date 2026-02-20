@@ -133,10 +133,13 @@ class ZCashShieldSyncServiceTest : public testing::Test {
         mojom::ZCashAccountShieldBirthday::New(kAccountBirthday, "hash");
     OrchardFullViewKey fvk;
 
+    auto action_context =
+        zcash_wallet_service().CreateActionContext(zcash_account_);
+    action_context.account_internal_addr = OrchardAddrRawPart();
+
     sync_service_ = std::make_unique<ZCashShieldSyncService>(
-        zcash_wallet_service(),
-        zcash_wallet_service().CreateActionContext(zcash_account_),
-        account_birthday, fvk, observer_->GetWeakPtr());
+        zcash_wallet_service(), std::move(action_context), account_birthday,
+        fvk, observer_->GetWeakPtr());
 
     // Ensure previous OrchardStorage is destroyed on background thread
     task_environment_.RunUntilIdle();
