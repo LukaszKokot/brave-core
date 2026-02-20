@@ -12,6 +12,8 @@
 #include "brave/components/misc_metrics/navigation_source_metrics.h"
 #include "brave/components/misc_metrics/page_metrics.h"
 #include "chrome/browser/profiles/profile.h"
+#include "chrome/browser/ui/browser.h"
+#include "chrome/browser/ui/browser_finder.h"
 #include "content/public/browser/browser_context.h"
 #include "content/public/browser/navigation_handle.h"
 #include "content/public/browser/reload_type.h"
@@ -65,17 +67,28 @@ void PageMetricsTabHelper::DidFinishNavigation(
   }
 
   ui::PageTransition transition = navigation_handle->GetPageTransition();
-  if (!is_reload) {
-    if (ui::PageTransitionCoreTypeIs(transition,
-                                     ui::PAGE_TRANSITION_AUTO_BOOKMARK)) {
-      page_metrics_->navigation_source_metrics()->RecordBookmarkNavigation();
-    } else if (ui::PageTransitionCoreTypeIs(
-                   transition, ui::PAGE_TRANSITION_AUTO_TOPLEVEL)) {
-      page_metrics_->navigation_source_metrics()->RecordExternalNavigation();
-    }
-  }
+  MaybeRecordNavigationSource(transition, is_reload);
 
   page_metrics_->IncrementPagesLoadedCount(is_reload, is_otr);
+}
+
+void PageMetricsTabHelper::MaybeRecordNavigationSource(
+    ui::PageTransition transition,
+    bool is_reload) {
+  if (is_reload) {
+    return;
+  }
+  auto* nav_source_metrics = page_metrics_->navigation_source_metrics();
+  Browser* browser = chrome::FindBrowserWithTab(web_contents());
+  if (browser && browser->is_type_app()) {
+    nav_source_metrics->RecordPWANavigation();
+  } else if (ui::PageTransitionCoreTypeIs(transition,
+                                          ui::PAGE_TRANSITION_AUTO_BOOKMARK)) {
+    nav_source_metrics->RecordBookmarkNavigation();
+  } else if (ui::PageTransitionCoreTypeIs(transition,
+                                          ui::PAGE_TRANSITION_AUTO_TOPLEVEL)) {
+    nav_source_metrics->RecordExternalNavigation();
+  }
 }
 
 bool PageMetricsTabHelper::IsRelevantNavigationEvent(
