@@ -37,12 +37,13 @@ def main():
         'Contents/Helpers/BraveSoftwareUpdate.bundle/'
         'Contents/Helpers/ksadmin'
     }
-    for key, value in replacements.items():
-        assert key in script, key
-        script = script.replace(key, value)
 
-    m = re.search(r'@[^@\n]+@', script)
-    assert not m, 'Unexpected placeholder: ' + m.group(0)
+    placeholders = set(re.findall(r'@[^@\n]+@', script))
+
+    for placeholder in placeholders:
+        assert placeholder in replacements, \
+            f"Missing replacement for {placeholder}"
+        script = script.replace(placeholder, replacements[placeholder])
 
     makedirs(dirname(args.out_file), exist_ok=True)
 

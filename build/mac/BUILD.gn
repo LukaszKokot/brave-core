@@ -233,27 +233,28 @@ action("generate_eddsa_sig_for_delta") {
 preinstall_script = "$packaging_dir/brave/pkg_preinstall.in"
 postinstall_script = "$packaging_dir/brave/pkg_postinstall.in"
 
+action("copy_preinstall") {
+  script = "create_pkg_install_scripts.py"
+
+  output = preinstall_script
+
+  args = [
+    rebase_path("//chrome/installer/mac/pkg_preinstall.in"),
+    brave_exe,
+    "Contents/Frameworks/$chrome_product_full_name Framework.framework",
+    mac_browser_bundle_identifier,
+    rebase_path(output),
+  ]
+
+  inputs = [
+    script,
+    "//chrome/installer/mac/pkg_preinstall.in",
+  ]
+
+  outputs = [ output ]
+}
+
 if (install_omaha4_with_pkg) {
-  action("preinstall") {
-    script = "create_pkg_install_scripts.py"
-
-    output = preinstall_script
-
-    args = [
-      rebase_path("//chrome/installer/mac/pkg_preinstall.in"),
-      brave_exe,
-      "Contents/Frameworks/$chrome_product_full_name Framework.framework",
-      mac_browser_bundle_identifier,
-      rebase_path(output),
-    ]
-
-    inputs = [
-      script,
-      "//chrome/installer/mac/pkg_preinstall.in",
-    ]
-
-    outputs = [ output ]
-  }
   action("postinstall") {
     script = "create_pkg_install_scripts.py"
 
@@ -275,10 +276,6 @@ if (install_omaha4_with_pkg) {
     outputs = [ output ]
   }
 } else {
-  copy("copy_preinstall") {
-    sources = [ "pkg-scripts/preinstall" ]
-    outputs = [ preinstall_script ]
-  }
   copy("copy_postinstall") {
     sources = [ "pkg-scripts/postinstall" ]
     outputs = [ postinstall_script ]
