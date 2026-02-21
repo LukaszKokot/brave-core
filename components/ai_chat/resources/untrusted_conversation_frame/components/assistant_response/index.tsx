@@ -194,13 +194,8 @@ export default function AssistantResponse(props: AssistantResponseProps) {
         />
       ))}
 
-      {!props.isEntryInProgress && (
-        <>
-          {sourcesEvent && <WebSourcesEvent sources={sourcesEvent.sources} />}
-          {searchQueriesEvent && (
-            <SearchSummary searchQueries={searchQueriesEvent.searchQueries} />
-          )}
-        </>
+      {!props.isEntryInProgress && sourcesEvent && (
+        <WebSourcesEvent sources={sourcesEvent.sources} />
       )}
       {props.toolArtifacts
         ?.filter((artifact) => artifact.type === Mojom.LINE_CHART_ARTIFACT_TYPE)
@@ -210,6 +205,9 @@ export default function AssistantResponse(props: AssistantResponseProps) {
             artifact={artifact}
           />
         ))}
+      {!props.isEntryInProgress && searchQueriesEvent && (
+        <SearchSummary searchQueries={searchQueriesEvent.searchQueries} />
+      )}
     </>
   )
 }
