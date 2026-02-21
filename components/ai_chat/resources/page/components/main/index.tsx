@@ -137,6 +137,12 @@ function Main() {
   const { scrollToBottomContinuously, hasScrollableContent } =
     useScrollToBottom(scrollElement, conversationContentElement)
 
+  // When the iframe calls dismissMenus() (user tapped/clicked there), trigger a
+  // click in the parent so Leo's clickOutside closes any open menus.
+  aiChatContext.api.useDismissMenus(() => {
+    scrollElement.current?.click()
+  })
+
   // Scroll to bottom when opening a conversation
   React.useEffect(() => {
     if (!conversationContext.conversationUuid) {
