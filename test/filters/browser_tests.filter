@@ -25,6 +25,8 @@
 
 # These tests fail because we override SidePanel::UpdateWidthOnEntryChanged
 # to do nothing.
+-SidePanelCoordinatorTest.ChangeSidePanelAlignment
+-SidePanelCoordinatorTest.ChangeSidePanelAlignmentRTL
 -SidePanelCoordinatorTest.ChangeSidePanelWidth*
 -SidePanelCoordinatorTest.ChangesTitleWhenActionItemChanges
 -SidePanelCoordinatorTest.ExtensionSidePanelHasPinButton
@@ -75,6 +77,8 @@
 -ZeroSuggestPrefetchTabHelperBrowserTestOnWeb.StartPrefetch
 
 # These tests fail because the default search engine is Brave instead of Google.
+-All/SearchOverriddenParamsProvidersBrowserTest.GetExtensionControllingSearch/ExplicitChoice
+-All/SearchOverriddenParamsProvidersBrowserTest.GetExtensionControllingSearch/KeepOrBack
 -DevToolsTest.TestOpenSearchResultsInNewTab
 -ExtensionControllingSearchExplicitChoiceParamsBrowserTest.NewExtensionOrPreviousGoogleSearch
 -LensOverlayControllerBrowserTest.EnterprisePolicy
@@ -93,11 +97,13 @@
 -Actor*BrowserTest*.*
 -Actor*BrowserTest*.*/*
 -ActorAttempt*.*
+-ActorPageToolMagicCursorRendererResolvedTest.RecordsMatchOnSuccess
 -ActorTool*.*
 -Aiv4ModelLanguageDetectionTest/Aiv4ModelLanguageDetectionBrowserTest.CheckLanguageDetectionHistogramStatus/*
 -Aiv4ModelTimeoutBrowserTest.PassageEmbedderTestTimeout
 -All/Actor*BrowserTest.*
 -All/Actor*BrowserTest.*/*
+-All/ActorPageToolMagicCursorTest.RemovedElement/*
 -All/AutofillPrivateApiAuthToViewSensitiveEntityTest.*/*
 -All/ContextualTasksContextServiceParameterizedTest.*/*
 -All/ExecutionEngine*BrowserTest.*/*
@@ -166,6 +172,7 @@
 -SegmentationPlatformTest.NullModelUpdateForUnknownModelShouldBeNoOp
 -SegmentationPlatformTest.ReceiveModelUpdateFromOptimizationGuide
 -SegmentationPlatformTest.ReceiveNullModelUpdateFromOptimizationGuide
+-SkillsInteractiveUiTest.UpdateContextualSkill
 -UserAnnotationsServiceBrowserTest.*
 -UserAnnotationsServiceExplicitAllowlistBrowserTest.*
 -VisualQueryClassifierAgentTest.StartClassification_InvalidModel
@@ -866,6 +873,9 @@
 -NewTabPageUtilBrowserTest.SyncRequired
 -NTPTilesForSupervisedUsersTest.DoNotLoadBlockedURL
 -NTPTilesForSupervisedUsersTest.LoadURL
+-OpportunisticKeyRetrievalEnclaveAuthenticatorBrowserTest.MakeCredential_AndCreateGpmPin_WhenPasskeysUnlockedViaOpportunisticFlowInOtherTab
+-OpportunisticKeyRetrievalEnclaveAuthenticatorBrowserTest.MakeCredential_WhenPasskeysBecomingUnregistered
+-OpportunisticKeyRetrievalEnclaveAuthenticatorBrowserTest.MakeCredential_WhenPasskeysUnlockedViaOpportunisticFlowInOtherTab
 -PasskeyUnlockManagerBrowserTest.IsCreated
 -PasskeyUnlockManagerBrowserTest.NotifyObserversOnEnclaveStateUpdated
 -PasskeyUnlockManagerBrowserTest.OpensNewTabWithPasskeyUnlockUrl
@@ -2532,6 +2542,7 @@
 # These tests fail because we disable kAimEnabled.
 -All/OmniboxContextMenuControllerBrowserTestWithCommand.ExecuteCommand_AiModeOpen_ReopensOnCancel/*
 -ChromeAimEligibilityService*.*
+-OmniboxContextMenuControllerBrowserTest.AddRecentTabsToMenu
 -OmniboxContextMenuControllerBrowserTest.ExecuteCommand
 
 # This test fails because we add our own item to omnibox contextual search
@@ -2712,6 +2723,16 @@
 # This test fails because the expected height of the toolbar buttons (34px)
 # doesn't match our value (28px).
 -WebUIToolbarWebViewSplitTabsBrowserTest.VerifyDynamicTouchModeUpdate
+
+# These tests fail because they try to toggle Glic UI via toolbar button which
+# we don't have.
+-GlicActorActionExecutionFunctionalBrowserTest.*
+-GlicActorContextFetchFunctionalBrowserTest.*
+-GlicActorPageContextMetricsFunctionalBrowserTest.*
+-GlicActorTabFunctionalBrowserTest.*
+-GlicActorTaskLifecycleFunctionalBrowserTest.*
+-SkillsInteractiveUiTest.InvokeSkill
+-SkillsInteractiveUiTest.UpdateSkillPreviews
 
 # Tests below this point have not been diagnosed or had issues created yet.
 -_/WebrtcLoggingPrivateApiStartEventLoggingTestPolicyEnabled.*
