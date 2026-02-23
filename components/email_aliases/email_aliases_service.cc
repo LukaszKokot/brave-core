@@ -80,7 +80,7 @@ auto MakeRequest(const std::string& bearer_token) {
   Request request;
   request.network_traffic_annotation_tag =
       net::MutableNetworkTrafficAnnotationTag(kTrafficAnnotation);
-  brave_account::endpoint_client::SetBearerToken(request, bearer_token);
+  endpoint_client::SetBearerToken(request, bearer_token);
   request.headers.SetHeader(kBraveServicesKeyHeader,
                             BUILDFLAG(BRAVE_SERVICES_KEY));
   return request;
@@ -223,9 +223,9 @@ void EmailAliasesService::RefreshAliases() {
 
 void EmailAliasesService::RefreshAliasesWithToken(TokenResult token) {
   if (token.has_value()) {
-    auto request = MakeRequest<brave_account::endpoint_client::WithHeaders<
+    auto request = MakeRequest<endpoint_client::WithHeaders<
         endpoints::AliasList::Request>>(token.value()->serviceToken);
-    brave_account::endpoint_client::Client<endpoints::AliasList>::Send(
+    endpoint_client::Client<endpoints::AliasList>::Send(
         url_loader_factory_, std::move(request),
         base::BindOnce(&EmailAliasesService::OnRefreshAliasesResponse,
                        weak_factory_.GetWeakPtr()));
@@ -235,9 +235,9 @@ void EmailAliasesService::RefreshAliasesWithToken(TokenResult token) {
 void EmailAliasesService::GenerateAliasWithToken(GenerateAliasCallback callback,
                                                  TokenResult token) {
   if (token.has_value()) {
-    auto request = MakeRequest<brave_account::endpoint_client::WithHeaders<
+    auto request = MakeRequest<endpoint_client::WithHeaders<
         endpoints::GenerateAlias::Request>>(token.value()->serviceToken);
-    brave_account::endpoint_client::Client<endpoints::GenerateAlias>::Send(
+    endpoint_client::Client<endpoints::GenerateAlias>::Send(
         url_loader_factory_, std::move(request),
         base::BindOnce(&EmailAliasesService::OnGenerateAliasResponse,
                        weak_factory_.GetWeakPtr(), std::move(callback)));
@@ -253,7 +253,7 @@ void EmailAliasesService::UpdateAliasWithToken(
     UpdateAliasCallback callback,
     TokenResult token) {
   if (token.has_value()) {
-    auto request = MakeRequest<brave_account::endpoint_client::WithHeaders<
+    auto request = MakeRequest<endpoint_client::WithHeaders<
         endpoints::UpdateAlias::Request>>(token.value()->serviceToken);
     request.alias = alias_email;
     request.status = "active";  // For now, we only support active aliases.
@@ -261,7 +261,7 @@ void EmailAliasesService::UpdateAliasWithToken(
     // TODO(https://github.com/brave/brave-browser/issues/49229):
     // Add support for storing alias note in the client.
 
-    brave_account::endpoint_client::Client<endpoints::UpdateAlias>::Send(
+    endpoint_client::Client<endpoints::UpdateAlias>::Send(
         url_loader_factory_, std::move(request),
         base::BindOnce(&EmailAliasesService::OnEditAliasResponse,
                        weak_factory_.GetWeakPtr(), std::move(callback),
@@ -276,10 +276,10 @@ void EmailAliasesService::DeleteAliasWithToken(const std::string& alias_email,
                                                DeleteAliasCallback callback,
                                                TokenResult token) {
   if (token.has_value()) {
-    auto request = MakeRequest<brave_account::endpoint_client::WithHeaders<
+    auto request = MakeRequest<endpoint_client::WithHeaders<
         endpoints::DeleteAlias::Request>>(token.value()->serviceToken);
     request.alias = alias_email;
-    brave_account::endpoint_client::Client<endpoints::DeleteAlias>::Send(
+    endpoint_client::Client<endpoints::DeleteAlias>::Send(
         url_loader_factory_, std::move(request),
         base::BindOnce(&EmailAliasesService::OnEditAliasResponse,
                        weak_factory_.GetWeakPtr(), std::move(callback),
