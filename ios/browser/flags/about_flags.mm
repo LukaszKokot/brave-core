@@ -51,12 +51,9 @@ const flags_ui::FeatureEntry::FeatureParam kBraveIOSUserAgentSuffixComment[] = {
     {"default_user_agent", "3"}};
 const flags_ui::FeatureEntry::FeatureVariation
     kBraveIOSUserAgentFeatureVariations[] = {
-        {"- Version", kBraveIOSUserAgentVersion,
-         std::size(kBraveIOSUserAgentVersion), nullptr},
-        {"- Suffix", kBraveIOSUserAgentSuffix,
-         std::size(kBraveIOSUserAgentSuffix), nullptr},
-        {"- Suffix Comment", kBraveIOSUserAgentSuffixComment,
-         std::size(kBraveIOSUserAgentSuffixComment), nullptr}};
+        {"- Version", kBraveIOSUserAgentVersion, nullptr},
+        {"- Suffix", kBraveIOSUserAgentSuffix, nullptr},
+        {"- Suffix Comment", kBraveIOSUserAgentSuffixComment, nullptr}};
 
 #define BRAVE_SKU_SDK_FEATURE_ENTRIES                   \
   EXPAND_FEATURE_ENTRIES({                              \
