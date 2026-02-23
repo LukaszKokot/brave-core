@@ -268,6 +268,8 @@ void BraveBrowserViewLayout::LayoutSideBar(gfx::Rect& contents_bounds) {
     sidebar_bounds.set_x(contents_bounds.right());
   }
 
+  contents_bounds = views().browser_view->GetMirroredRect(contents_bounds);
+
   gfx::Insets panel_margins = GetContentsMargins();
   if (delegate().ShouldUseBraveWebViewRoundedCornersForContents()) {
     // In rounded mode, there is already a gap between the sidebar and the main

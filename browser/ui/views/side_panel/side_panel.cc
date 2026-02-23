@@ -12,6 +12,7 @@
 #include "base/check_is_test.h"
 #include "base/check_op.h"
 #include "base/functional/bind.h"
+#include "base/i18n/rtl.h"
 #include "brave/browser/ui/color/brave_color_id.h"
 #include "brave/browser/ui/views/frame/brave_browser_view.h"
 #include "brave/browser/ui/views/frame/brave_contents_view_util.h"
@@ -225,7 +226,10 @@ void SidePanel::OnResize(int resize_amount, bool done_resizing) {
     starting_width_on_resize_ = width();
   }
   int proposed_width = *starting_width_on_resize_ +
-                       (IsRightAligned() ? -resize_amount : resize_amount);
+                       ((IsRightAligned() && !base::i18n::IsRTL()) ||
+                                (!IsRightAligned() && base::i18n::IsRTL())
+                            ? -resize_amount
+                            : resize_amount);
 
   if (done_resizing) {
     starting_width_on_resize_ = std::nullopt;

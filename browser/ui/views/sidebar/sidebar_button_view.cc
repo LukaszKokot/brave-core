@@ -16,6 +16,8 @@
 #include "ui/views/view_class_properties.h"
 
 SidebarButtonView::SidebarButtonView(const std::u16string& accessible_name) {
+  SetFlipCanvasOnPaintForRTLUI(false);
+
   // Locate image at center of the button.
   SetImageHorizontalAlignment(views::ImageButton::ALIGN_CENTER);
   SetImageVerticalAlignment(views::ImageButton::ALIGN_MIDDLE);

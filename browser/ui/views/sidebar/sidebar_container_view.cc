@@ -127,6 +127,7 @@ SidebarContainerView::SidebarContainerView(
       side_panel_coordinator_(side_panel_coordinator),
       browser_window_event_observer_(
           std::make_unique<BrowserWindowEventObserver>(*this)) {
+  SetMirrored(false);
   constexpr int kAnimationDurationMS = 150;
   width_animation_.SetSlideDuration(base::Milliseconds(kAnimationDurationMS));
 

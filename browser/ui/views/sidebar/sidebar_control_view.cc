@@ -67,6 +67,7 @@ bool IsSidebarOnLeft(Browser* browser) {
 SidebarControlView::SidebarControlView(Delegate* delegate,
                                        BraveBrowser* browser)
     : delegate_(delegate), browser_(browser) {
+  SetMirrored(false);
   set_context_menu_controller(this);
 
   AddChildViews();
