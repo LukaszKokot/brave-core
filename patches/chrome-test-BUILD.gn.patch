@@ -1,8 +1,8 @@
 diff --git a/chrome/test/BUILD.gn b/chrome/test/BUILD.gn
-index b4dd1d02038cea489966b3a2e375281af4e11f99..cf5b3fccafb5e7e7927731404754a4a1b8dfa47d 100644
+index a04aa42416b0dae45b619c0bc5204f4c1aa10a5f..e3230458e3dcb84a8e3658876e88a652634ac73b 100644
 --- a/chrome/test/BUILD.gn
 +++ b/chrome/test/BUILD.gn
-@@ -696,6 +696,7 @@ static_library("test_support") {
+@@ -711,6 +711,7 @@ static_library("test_support") {
      "//ui/gl",
    ]
  
