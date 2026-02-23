@@ -13,12 +13,12 @@
 #include "base/logging.h"
 #include "base/strings/utf_string_conversions.h"
 #include "base/types/expected.h"
-#include "brave/components/endpoint_client/client.h"
 #include "brave/components/constants/brave_services_key.h"
 #include "brave/components/constants/network_constants.h"
 #include "brave/components/email_aliases/email_aliases.mojom.h"
 #include "brave/components/email_aliases/email_aliases_api.h"
 #include "brave/components/email_aliases/features.h"
+#include "brave/components/endpoint_client/client.h"
 #include "components/grit/brave_components_strings.h"
 #include "mojo/public/cpp/bindings/callback_helpers.h"
 #include "mojo/public/cpp/bindings/pending_remote.h"
@@ -223,8 +223,9 @@ void EmailAliasesService::RefreshAliases() {
 
 void EmailAliasesService::RefreshAliasesWithToken(TokenResult token) {
   if (token.has_value()) {
-    auto request = MakeRequest<endpoint_client::WithHeaders<
-        endpoints::AliasList::Request>>(token.value()->serviceToken);
+    auto request = MakeRequest<
+        endpoint_client::WithHeaders<endpoints::AliasList::Request>>(
+        token.value()->serviceToken);
     endpoint_client::Client<endpoints::AliasList>::Send(
         url_loader_factory_, std::move(request),
         base::BindOnce(&EmailAliasesService::OnRefreshAliasesResponse,
@@ -235,8 +236,9 @@ void EmailAliasesService::RefreshAliasesWithToken(TokenResult token) {
 void EmailAliasesService::GenerateAliasWithToken(GenerateAliasCallback callback,
                                                  TokenResult token) {
   if (token.has_value()) {
-    auto request = MakeRequest<endpoint_client::WithHeaders<
-        endpoints::GenerateAlias::Request>>(token.value()->serviceToken);
+    auto request = MakeRequest<
+        endpoint_client::WithHeaders<endpoints::GenerateAlias::Request>>(
+        token.value()->serviceToken);
     endpoint_client::Client<endpoints::GenerateAlias>::Send(
         url_loader_factory_, std::move(request),
         base::BindOnce(&EmailAliasesService::OnGenerateAliasResponse,
@@ -253,8 +255,9 @@ void EmailAliasesService::UpdateAliasWithToken(
     UpdateAliasCallback callback,
     TokenResult token) {
   if (token.has_value()) {
-    auto request = MakeRequest<endpoint_client::WithHeaders<
-        endpoints::UpdateAlias::Request>>(token.value()->serviceToken);
+    auto request = MakeRequest<
+        endpoint_client::WithHeaders<endpoints::UpdateAlias::Request>>(
+        token.value()->serviceToken);
     request.alias = alias_email;
     request.status = "active";  // For now, we only support active aliases.
 
@@ -276,8 +279,9 @@ void EmailAliasesService::DeleteAliasWithToken(const std::string& alias_email,
                                                DeleteAliasCallback callback,
                                                TokenResult token) {
   if (token.has_value()) {
-    auto request = MakeRequest<endpoint_client::WithHeaders<
-        endpoints::DeleteAlias::Request>>(token.value()->serviceToken);
+    auto request = MakeRequest<
+        endpoint_client::WithHeaders<endpoints::DeleteAlias::Request>>(
+        token.value()->serviceToken);
     request.alias = alias_email;
     endpoint_client::Client<endpoints::DeleteAlias>::Send(
         url_loader_factory_, std::move(request),
