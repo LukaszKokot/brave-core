@@ -213,7 +213,8 @@ TEST_F(LocalAIServiceTest, GenerateEmbeddingsResetsCloseTimeout) {
   EXPECT_EQ(TestEmbedding(), future1.Get());
 
   // Advance 20 seconds (not enough to trigger close).
-  task_environment_.FastForwardBy(LocalAIService::kCloseTimeout - base::Seconds(10));
+  task_environment_.FastForwardBy(LocalAIService::kCloseTimeout -
+                                  base::Seconds(10));
 
   // Second request should reset the timer.
   base::test::TestFuture<const std::vector<double>&> future2;
@@ -222,7 +223,8 @@ TEST_F(LocalAIServiceTest, GenerateEmbeddingsResetsCloseTimeout) {
 
   // Advance another 20 seconds — 40s total since start, but only
   // 20s since last request. Timer should NOT have fired.
-  task_environment_.FastForwardBy(LocalAIService::kCloseTimeout - base::Seconds(10));
+  task_environment_.FastForwardBy(LocalAIService::kCloseTimeout -
+                                  base::Seconds(10));
 
   // Should still work without reinitializing.
   base::test::TestFuture<const std::vector<double>&> future3;

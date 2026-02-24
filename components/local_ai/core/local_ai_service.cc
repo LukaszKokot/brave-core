@@ -7,6 +7,7 @@
 
 #include <utility>
 
+#include "base/containers/map_util.h"
 #include "base/logging.h"
 
 namespace local_ai {
@@ -132,10 +133,10 @@ void LocalAIService::ForwardRequest(const std::string& text,
 
 void LocalAIService::OnRequestComplete(uint64_t request_id,
                                        const std::vector<double>& result) {
-  auto it = in_flight_requests_.find(request_id);
-  if (it != in_flight_requests_.end()) {
-    std::move(it->second).Run(result);
-    in_flight_requests_.erase(it);
+  auto* callback = base::FindOrNull(in_flight_requests_, request_id);
+  if (callback) {
+    std::move(*callback).Run(result);
+    in_flight_requests_.erase(request_id);
   }
   MaybeStartIdleTimer();
 }
